@@ -93,6 +93,9 @@ function loadMockStore() {
       if (data.tasks && Array.isArray(data.tasks)) mockStore.tasks = data.tasks;
       if (data.departments && Array.isArray(data.departments)) mockStore.departments = data.departments;
       if (data.performance_reviews && Array.isArray(data.performance_reviews)) mockStore.performance_reviews = data.performance_reviews;
+      if (data.holidays && Array.isArray(data.holidays)) mockStore.holidays = data.holidays;
+      if (data.announcements && Array.isArray(data.announcements)) mockStore.announcements = data.announcements;
+      if (data.notifications && Array.isArray(data.notifications)) mockStore.notifications = data.notifications;
     }
   } catch (err) {
     console.warn('Failed to load mockStore from file:', err.message);

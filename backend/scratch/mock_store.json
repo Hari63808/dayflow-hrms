@@ -293,11 +293,19 @@
     },
     {
       "id": 2,
-      "title": "Labor Day 2026",
-      "date": "2026-09-07",
+      "title": "Onam",
+      "date": "2026-08-26",
       "type": "Public",
-      "description": "Official national labor day holiday",
-      "created_at": "2026-08-22T09:10:01.686Z"
+      "description": "",
+      "created_at": "2026-08-22T09:11:59.197Z"
+    },
+    {
+      "id": 3,
+      "title": "Independence Day 2026",
+      "date": "2026-07-04",
+      "type": "Public",
+      "description": "National Independence Day Celebration",
+      "created_at": "2026-08-22T09:13:51.286Z"
     }
   ],
   "announcements": [
@@ -308,7 +316,7 @@
       "priority": "High",
       "target_department": "All",
       "author_name": "Dayflow Admin",
-      "created_at": "2026-08-22T09:10:01.604Z"
+      "created_at": "2026-08-22T09:10:37.862Z"
     }
   ],
   "tasks": [
@@ -367,7 +375,7 @@
       "type": "info",
       "is_read": false,
       "read_status": false,
-      "created_at": "2026-08-22T09:10:01.604Z"
+      "created_at": "2026-08-22T09:10:37.862Z"
     },
     {
       "id": 2,
@@ -377,7 +385,7 @@
       "type": "info",
       "is_read": false,
       "read_status": false,
-      "created_at": "2026-08-22T09:10:01.604Z"
+      "created_at": "2026-08-22T09:10:37.862Z"
     },
     {
       "id": 3,
@@ -387,7 +395,7 @@
       "type": "leave",
       "is_read": false,
       "read_status": false,
-      "created_at": "2026-08-22T09:10:01.604Z"
+      "created_at": "2026-08-22T09:10:37.862Z"
     },
     {
       "id": 4,
@@ -397,7 +405,7 @@
       "type": "task",
       "is_read": false,
       "read_status": false,
-      "created_at": "2026-08-22T09:10:01.604Z"
+      "created_at": "2026-08-22T09:10:37.862Z"
     },
     {
       "id": 5,
@@ -407,7 +415,7 @@
       "type": "appraisal",
       "is_read": false,
       "read_status": false,
-      "created_at": "2026-08-22T09:10:01.604Z"
+      "created_at": "2026-08-22T09:10:37.862Z"
     },
     {
       "id": 6,
@@ -417,7 +425,7 @@
       "type": "announcement",
       "is_read": false,
       "read_status": false,
-      "created_at": "2026-08-22T09:10:01.604Z"
+      "created_at": "2026-08-22T09:10:37.862Z"
     }
   ],
   "audit_logs": []
