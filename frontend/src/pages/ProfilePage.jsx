@@ -19,10 +19,10 @@ const ProfilePage = () => {
   const fetchProfile = async () => {
     try {
       const res = await employeeService.getProfile();
-      if (res.success && res.employee) {
+      if (res?.success && res?.employee) {
         setProfile(res.employee);
-        setPhone(res.employee.phone || '');
-        setAddress(res.employee.address || '');
+        setPhone(res.employee.phone ?? '');
+        setAddress(res.employee.address ?? '');
       }
     } catch (err) {
       console.error('Failed to load profile:', err);
@@ -40,8 +40,8 @@ const ProfilePage = () => {
     setSaving(true);
     try {
       const res = await employeeService.updateProfile({ phone, address });
-      if (res.success) {
-        setToast({ message: res.message, type: 'success' });
+      if (res?.success) {
+        setToast({ message: res.message ?? 'Profile updated successfully.', type: 'success' });
         setProfile(res.employee);
         updateUser({ employee: res.employee });
       }
@@ -53,7 +53,7 @@ const ProfilePage = () => {
   };
 
   const handleAvatarChange = async (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
 
     const formData = new FormData();
@@ -62,19 +62,21 @@ const ProfilePage = () => {
     setUploading(true);
     try {
       const res = await employeeService.uploadAvatar(formData);
-      if (res.success) {
-        setToast({ message: res.message, type: 'success' });
+      if (res?.success) {
+        setToast({ message: res.message ?? 'Avatar updated successfully.', type: 'success' });
         setProfile(res.employee);
         updateUser({ employee: res.employee });
       }
     } catch (err) {
-      setToast({ message: err.response?.data?.message || 'Avatar upload failed.', type: 'error' });
+      setToast({ message: err.response?.data?.message ?? 'Avatar upload failed.', type: 'error' });
     } finally {
       setUploading(false);
     }
   };
 
   if (loading) return <Loader message="Loading profile settings..." />;
+
+  const safeProfile = profile ?? user?.employee ?? {};
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', maxWidth: '1000px', margin: '0 auto' }}>
@@ -85,7 +87,7 @@ const ProfilePage = () => {
         {/* Avatar Uploader Wrapper */}
         <div style={{ position: 'relative' }}>
           <img
-            src={profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`}
+            src={safeProfile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email ?? 'user'}`}
             alt="Profile Avatar"
             style={{
               width: '120px',
@@ -120,22 +122,22 @@ const ProfilePage = () => {
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <h2 style={{ fontSize: '1.75rem', fontWeight: 800 }}>
-              {profile?.first_name} {profile?.last_name}
+              {safeProfile?.first_name ?? 'User'} {safeProfile?.last_name ?? ''}
             </h2>
             <span className="badge badge-info" style={{ textTransform: 'uppercase' }}>
-              {user?.role}
+              {user?.role ?? 'Employee'}
             </span>
           </div>
           <p style={{ fontSize: '0.95rem', color: 'var(--primary)', fontWeight: 600, marginTop: '0.2rem' }}>
-            {profile?.designation} • {profile?.department}
+            {safeProfile?.designation ?? 'Team Member'} • {safeProfile?.department ?? 'General'}
           </p>
 
           <div style={{ display: 'flex', gap: '1.5rem', marginTop: '1rem', flexWrap: 'wrap', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-              <Mail size={15} color="var(--primary)" /> {profile?.email}
+              <Mail size={15} color="var(--primary)" /> {safeProfile?.email ?? user?.email ?? '—'}
             </span>
             <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-              <Building size={15} color="var(--secondary)" /> Member since {profile?.joining_date}
+              <Building size={15} color="var(--secondary)" /> Member since {safeProfile?.joining_date ?? '—'}
             </span>
           </div>
         </div>
@@ -151,11 +153,11 @@ const ProfilePage = () => {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
             <div className="form-group">
               <label className="form-label">First Name (Read-only)</label>
-              <input type="text" className="form-input" value={profile?.first_name || ''} disabled readOnly style={{ opacity: 0.7 }} />
+              <input type="text" className="form-input" value={safeProfile?.first_name ?? ''} disabled readOnly style={{ opacity: 0.7 }} />
             </div>
             <div className="form-group">
               <label className="form-label">Last Name (Read-only)</label>
-              <input type="text" className="form-input" value={profile?.last_name || ''} disabled readOnly style={{ opacity: 0.7 }} />
+              <input type="text" className="form-input" value={safeProfile?.last_name ?? ''} disabled readOnly style={{ opacity: 0.7 }} />
             </div>
           </div>
 
@@ -189,7 +191,7 @@ const ProfilePage = () => {
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
-            <button type="submit" disabled={saving} className="btn btn-primary" style={{ padding: '0.75rem 1.75rem' }}>
+            <button type="submit" disabled={saving || uploading} className="btn btn-primary" style={{ padding: '0.75rem 1.75rem' }}>
               <Save size={18} />
               <span>{saving ? 'Saving...' : 'Save Profile Changes'}</span>
             </button>
