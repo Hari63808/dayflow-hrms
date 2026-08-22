@@ -537,7 +537,17 @@ const executeMockQuery = (sql, params = []) => {
     saveMockStore();
     return { insertId: newId };
   }
+  if (upperSql.includes('DELETE FROM ANNOUNCEMENTS WHERE ID')) {
+    const id = Number(params[0]);
+    mockStore.announcements = mockStore.announcements.filter(a => a.id !== id);
+    saveMockStore();
+    return { affectedRows: 1 };
+  }
   if (upperSql.includes('FROM ANNOUNCEMENTS')) {
+    if (upperSql.includes('WHERE ID = ?')) {
+      const ann = mockStore.announcements.find(a => a.id === Number(params[0]));
+      return ann ? [ann] : [];
+    }
     return mockStore.announcements.slice().sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
   }
 
