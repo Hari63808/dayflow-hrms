@@ -363,9 +363,10 @@ const executeMockQuery = (sql, params) => {
     mockStore.employees.push(newEmp);
     return { insertId: newId };
   }
-  if (upperSql.includes('UPDATE EMPLOYEES SET') && upperSql.includes('WHERE ID')) {
-    const id = Number(params[params.length - 1]);
-    const emp = mockStore.employees.find(e => e.id === id);
+  if (upperSql.includes('UPDATE EMPLOYEES SET')) {
+    const targetVal = Number(params[params.length - 1]);
+    const isUserIdQuery = upperSql.includes('WHERE USER_ID');
+    const emp = mockStore.employees.find(e => isUserIdQuery ? e.user_id === targetVal : e.id === targetVal);
     if (emp) {
       if (upperSql.includes('AVATAR_URL = ?')) {
         emp.avatar_url = params[0];
