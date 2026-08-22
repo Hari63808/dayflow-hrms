@@ -33,6 +33,7 @@ const AppRoutes = () => {
       <Route element={<ProtectedRoute adminOnly={false} />}>
         <Route element={<MainLayout title="Dashboard Overview" />}>
           <Route path="/dashboard" element={<EmployeeDashboard />} />
+          <Route path="/employee-dashboard" element={<EmployeeDashboard />} />
         </Route>
         <Route element={<MainLayout title="Attendance & Shift Clock" />}>
           <Route path="/attendance" element={<AttendancePage />} />

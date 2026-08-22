@@ -17,7 +17,17 @@ const register = async (req, res) => {
     const { email, password, firstName, lastName, role, phone, address, department, designation } = req.body;
 
     if (!email || !password || !firstName || !lastName) {
-      return res.status(400).json({ success: false, message: 'Please provide all required fields (email, password, firstName, lastName).' });
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Please provide all required fields (email, password, firstName, lastName).' 
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Password must be at least 6 characters long.' 
+      });
     }
 
     // Validate email format
@@ -34,7 +44,10 @@ const register = async (req, res) => {
     // Check if user already exists
     const existingUsers = await db.query('SELECT * FROM users WHERE email = ?', [email]);
     if (existingUsers && existingUsers.length > 0) {
-      return res.status(400).json({ success: false, message: 'An account with this email address already exists.' });
+      return res.status(400).json({ 
+        success: false, 
+        message: 'An account with this email address already exists.' 
+      });
     }
 
     // Hash password
@@ -55,7 +68,7 @@ const register = async (req, res) => {
     const joiningDate = new Date().toISOString().split('T')[0];
 
     // Insert employee profile
-    const empResult = await db.query(
+    await db.query(
       `INSERT INTO employees 
       (user_id, first_name, last_name, email, phone, address, department, designation, joining_date, avatar_url) 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -73,7 +86,7 @@ const register = async (req, res) => {
       ]
     );
 
-    // Fetch newly created record
+    // Fetch newly created employee record
     const newEmp = await db.query('SELECT * FROM employees WHERE user_id = ?', [userId]);
     const employeeData = newEmp[0];
 
@@ -121,7 +134,7 @@ const login = async (req, res) => {
 
     const user = users[0];
 
-    // Check password (support demo test string fallback)
+    // Check password
     let isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
       // Fallback for hackathon demo hardcoded password check
