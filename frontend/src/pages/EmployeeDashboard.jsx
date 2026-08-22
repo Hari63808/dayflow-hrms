@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { dashboardService } from '../services/dashboardService';
 import { attendanceService } from '../services/attendanceService';
 import { notificationService } from '../services/notificationService';
+import { announcementService } from '../services/announcementService';
 import { getAvatarUrl } from '../utils/avatarUtils';
 import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
@@ -43,6 +44,7 @@ const EmployeeDashboard = () => {
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [notifications, setNotifications] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
@@ -58,13 +60,15 @@ const EmployeeDashboard = () => {
     if (isManual) setRefreshing(true);
     setError(null);
     try {
-      const [resS, resN] = await Promise.all([
+      const [resS, resN, resA] = await Promise.all([
         dashboardService.getEmployeeStats(),
-        notificationService.getMyNotifications()
+        notificationService.getMyNotifications(),
+        announcementService.getAnnouncements()
       ]);
       if (resS?.success) setStats(resS.stats ?? {});
       if (resN?.success) setNotifications(resN.notifications?.slice(0, 5) ?? []);
-      if (isManual) setToast({ message: 'Dashboard updated with latest data.', type: 'success' });
+      if (resA?.success) setAnnouncements(resA.announcements?.slice(0, 3) ?? []);
+      if (isManual) setToast({ message: 'Dashboard updated with latest company data.', type: 'success' });
     } catch (err) {
       console.error('Failed to load employee dashboard metrics:', err);
       setError(err.response?.data?.message ?? 'Server error loading metrics.');
@@ -201,22 +205,56 @@ const EmployeeDashboard = () => {
         </div>
       </div>
 
-      {/* Error Retry Banner */}
-      {error && (
-        <div style={{
-          backgroundColor: 'var(--danger-bg)',
-          color: 'var(--danger)',
-          border: '1px solid var(--danger)',
-          padding: '1rem 1.5rem',
-          borderRadius: '12px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
+      {/* Company Announcements & Broadcasts Banner */}
+      {announcements.length > 0 && (
+        <div className="glass-card" style={{
+          padding: '1.5rem 1.75rem',
+          backgroundColor: 'rgba(59, 130, 246, 0.08)',
+          border: '1px solid rgba(59, 130, 246, 0.3)',
+          borderRadius: '16px'
         }}>
-          <span>⚠️ {error}</span>
-          <button onClick={() => fetchEmployeeDashboard(true)} className="btn btn-danger btn-sm">
-            Retry Sync
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(59, 130, 246, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b82f6' }}>
+                <Megaphone size={20} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Latest Company Announcements</h3>
+                <span style={{ fontSize: '0.775rem', color: 'var(--text-muted)' }}>Official notices from HR & Leadership</span>
+              </div>
+            </div>
+            <Link to="/announcements" className="btn btn-outline btn-sm" style={{ gap: '0.35rem' }}>
+              <span>View All ({announcements.length})</span>
+              <ArrowUpRight size={14} />
+            </Link>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+            {announcements.map((a) => (
+              <div key={a.id} style={{
+                padding: '1rem',
+                backgroundColor: 'var(--bg-surface)',
+                borderRadius: '12px',
+                border: '1px solid var(--border-color)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.4rem'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span className={`badge ${a?.priority === 'High' || a?.priority === 'Urgent' ? 'badge-danger' : 'badge-info'}`} style={{ fontSize: '0.65rem' }}>
+                    {a.priority || 'Normal'}
+                  </span>
+                  <span style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>
+                    {new Date(a.created_at || Date.now()).toLocaleDateString()}
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-main)' }}>{a.title}</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+                  {a.content?.length > 90 ? a.content.substring(0, 90) + '...' : a.content}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

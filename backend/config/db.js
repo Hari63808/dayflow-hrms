@@ -518,9 +518,28 @@ const executeMockQuery = (sql, params = []) => {
     return mockStore.notifications;
   }
 
+  // --- ANNOUNCEMENTS MODULE ---
+  if (upperSql.includes('INSERT INTO ANNOUNCEMENTS')) {
+    const newId = mockStore.announcements.length + 1;
+    const newAnn = {
+      id: newId,
+      title: params[0],
+      content: params[1] || '',
+      priority: params[2] || 'Normal',
+      target_department: params[3] || 'All',
+      author_name: params[4] || 'HR Admin',
+      created_at: new Date()
+    };
+    mockStore.announcements.push(newAnn);
+    saveMockStore();
+    return { insertId: newId };
+  }
+  if (upperSql.includes('FROM ANNOUNCEMENTS')) {
+    return mockStore.announcements.slice().sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+  }
+
   // --- OTHER STANDALONE MODULE QUERIES ---
   if (upperSql.includes('FROM HOLIDAYS')) return mockStore.holidays;
-  if (upperSql.includes('FROM ANNOUNCEMENTS')) return mockStore.announcements;
   if (upperSql.includes('FROM DOCUMENTS')) return mockStore.documents;
   if (upperSql.includes('FROM AUDIT_LOGS')) return mockStore.audit_logs;
   if (upperSql.includes('FROM ATTENDANCE_CORRECTIONS')) return mockStore.attendance_corrections;

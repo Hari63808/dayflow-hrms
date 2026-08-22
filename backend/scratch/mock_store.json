@@ -291,7 +291,7 @@
       "priority": "High",
       "target_department": "All",
       "author_name": "Dayflow Admin",
-      "created_at": "2026-08-22T08:44:09.813Z"
+      "created_at": "2026-08-22T08:44:10.332Z"
     }
   ],
   "tasks": [
@@ -350,7 +350,7 @@
       "type": "info",
       "is_read": false,
       "read_status": false,
-      "created_at": "2026-08-22T08:44:09.813Z"
+      "created_at": "2026-08-22T08:44:10.332Z"
     },
     {
       "id": 2,
@@ -360,7 +360,7 @@
       "type": "info",
       "is_read": false,
       "read_status": false,
-      "created_at": "2026-08-22T08:44:09.813Z"
+      "created_at": "2026-08-22T08:44:10.332Z"
     },
     {
       "id": 3,
@@ -370,7 +370,7 @@
       "type": "leave",
       "is_read": false,
       "read_status": false,
-      "created_at": "2026-08-22T08:44:09.813Z"
+      "created_at": "2026-08-22T08:44:10.332Z"
     },
     {
       "id": 4,
@@ -380,7 +380,7 @@
       "type": "task",
       "is_read": false,
       "read_status": false,
-      "created_at": "2026-08-22T08:44:09.813Z"
+      "created_at": "2026-08-22T08:44:10.332Z"
     },
     {
       "id": 5,
@@ -390,7 +390,7 @@
       "type": "appraisal",
       "is_read": false,
       "read_status": false,
-      "created_at": "2026-08-22T08:44:09.813Z"
+      "created_at": "2026-08-22T08:44:10.332Z"
     },
     {
       "id": 6,
@@ -400,67 +400,67 @@
       "type": "announcement",
       "is_read": false,
       "read_status": false,
-      "created_at": "2026-08-22T08:44:09.813Z"
+      "created_at": "2026-08-22T08:44:10.332Z"
     },
     {
       "id": 7,
       "user_id": 1,
-      "title": "🔵 New Announcement: Company Holiday Schedule Update 2026",
-      "message": "Please note that the office will be closed on Labor Day.",
+      "title": "🔵 New Announcement: gfgffdf",
+      "message": "dfdfg",
       "type": "announcement",
       "is_read": false,
       "read_status": false,
-      "created_at": "2026-08-22T08:44:09.846Z"
+      "created_at": "2026-08-22T08:45:16.965Z"
     },
     {
       "id": 8,
       "user_id": 2,
-      "title": "🔵 New Announcement: Company Holiday Schedule Update 2026",
-      "message": "Please note that the office will be closed on Labor Day.",
+      "title": "🔵 New Announcement: gfgffdf",
+      "message": "dfdfg",
       "type": "announcement",
       "is_read": false,
       "read_status": false,
-      "created_at": "2026-08-22T08:44:09.846Z"
+      "created_at": "2026-08-22T08:45:16.968Z"
     },
     {
       "id": 9,
       "user_id": 3,
-      "title": "🔵 New Announcement: Company Holiday Schedule Update 2026",
-      "message": "Please note that the office will be closed on Labor Day.",
+      "title": "🔵 New Announcement: gfgffdf",
+      "message": "dfdfg",
       "type": "announcement",
       "is_read": false,
       "read_status": false,
-      "created_at": "2026-08-22T08:44:09.847Z"
+      "created_at": "2026-08-22T08:45:16.971Z"
     },
     {
       "id": 10,
       "user_id": 4,
-      "title": "🔵 New Announcement: Company Holiday Schedule Update 2026",
-      "message": "Please note that the office will be closed on Labor Day.",
+      "title": "🔵 New Announcement: gfgffdf",
+      "message": "dfdfg",
       "type": "announcement",
       "is_read": false,
       "read_status": false,
-      "created_at": "2026-08-22T08:44:09.848Z"
+      "created_at": "2026-08-22T08:45:16.972Z"
     },
     {
       "id": 11,
       "user_id": 5,
-      "title": "🔵 New Announcement: Company Holiday Schedule Update 2026",
-      "message": "Please note that the office will be closed on Labor Day.",
+      "title": "🔵 New Announcement: gfgffdf",
+      "message": "dfdfg",
       "type": "announcement",
       "is_read": false,
       "read_status": false,
-      "created_at": "2026-08-22T08:44:09.849Z"
+      "created_at": "2026-08-22T08:45:16.972Z"
     },
     {
       "id": 12,
       "user_id": 6,
-      "title": "🔵 New Announcement: Company Holiday Schedule Update 2026",
-      "message": "Please note that the office will be closed on Labor Day.",
+      "title": "🔵 New Announcement: gfgffdf",
+      "message": "dfdfg",
       "type": "announcement",
       "is_read": false,
       "read_status": false,
-      "created_at": "2026-08-22T08:44:09.849Z"
+      "created_at": "2026-08-22T08:45:16.973Z"
     }
   ],
   "audit_logs": []
