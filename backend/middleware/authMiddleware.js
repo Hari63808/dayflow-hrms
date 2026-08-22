@@ -24,7 +24,7 @@ const protect = async (req, res, next) => {
         req.employee = employees[0];
       }
 
-      next();
+      return next();
     } catch (error) {
       console.error('Auth Middleware Error:', error.message);
       return res.status(401).json({ success: false, message: 'Not authorized, token validation failed.' });
@@ -38,20 +38,26 @@ const protect = async (req, res, next) => {
 
 // Admin role check middleware
 const adminOnly = (req, res, next) => {
-  if (req.user && req.user.role === 'admin') {
-    next();
-  } else {
-    return res.status(403).json({ success: false, message: 'Access denied. HR/Admin privileges required.' });
+  const userRole = (req.user?.role || '').toString().trim().toLowerCase();
+  if (req.user && (userRole === 'admin' || userRole === 'hr' || userRole === 'superadmin' || userRole === 'lead')) {
+    return next();
   }
+  return res.status(403).json({ 
+    success: false, 
+    message: `Access denied. HR/Admin privileges required. Your role: '${req.user?.role}'.` 
+  });
 };
 
 // Employee role check middleware
 const employeeOnly = (req, res, next) => {
-  if (req.user && (req.user.role === 'employee' || req.user.role === 'admin')) {
-    next();
-  } else {
-    return res.status(403).json({ success: false, message: 'Access denied. Employee privileges required.' });
+  const userRole = (req.user?.role || '').toString().trim().toLowerCase();
+  if (req.user && (userRole === 'employee' || userRole === 'admin' || userRole === 'hr' || userRole === 'superadmin' || userRole === 'lead')) {
+    return next();
   }
+  return res.status(403).json({ 
+    success: false, 
+    message: `Access denied. Employee privileges required. Your role: '${req.user?.role}'.` 
+  });
 };
 
 module.exports = {

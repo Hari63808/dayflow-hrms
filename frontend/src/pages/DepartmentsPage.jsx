@@ -4,7 +4,7 @@ import { departmentService } from '../services/departmentService';
 import Modal from '../components/Modal';
 import Loader from '../components/Loader';
 import Toast from '../components/Toast';
-import { Building, Plus, Search, Users, Code, Info } from 'lucide-react';
+import { Building, Plus, Search, Edit2, Trash2, Code } from 'lucide-react';
 
 const DepartmentsPage = () => {
   const { isAdmin } = useAuth();
@@ -14,6 +14,7 @@ const DepartmentsPage = () => {
   const [toast, setToast] = useState(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editId, setEditId] = useState(null);
   const [form, setForm] = useState({ name: '', code: '', description: '' });
   const [submitting, setSubmitting] = useState(false);
 
@@ -32,19 +33,56 @@ const DepartmentsPage = () => {
     fetchDepts();
   }, []);
 
+  const handleOpenAdd = () => {
+    setEditId(null);
+    setForm({ name: '', code: '', description: '' });
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (dept) => {
+    if (!dept) return;
+    setEditId(dept.id);
+    setForm({
+      name: dept.name ?? '',
+      code: dept.code ?? '',
+      description: dept.description ?? ''
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this department?')) return;
+    try {
+      const res = await departmentService.deleteDepartment(id);
+      if (res?.success) {
+        setToast({ message: res.message ?? 'Department deleted successfully!', type: 'success' });
+        fetchDepts();
+      }
+    } catch (err) {
+      setToast({ message: 'Failed to delete department.', type: 'error' });
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const res = await departmentService.addDepartment(form);
-      if (res?.success) {
-        setToast({ message: res.message ?? 'Department created!', type: 'success' });
-        setIsModalOpen(false);
-        setForm({ name: '', code: '', description: '' });
-        fetchDepts();
+      if (editId) {
+        const res = await departmentService.updateDepartment(editId, form);
+        if (res?.success) {
+          setToast({ message: res.message ?? 'Department updated!', type: 'success' });
+        }
+      } else {
+        const res = await departmentService.addDepartment(form);
+        if (res?.success) {
+          setToast({ message: res.message ?? 'Department created!', type: 'success' });
+        }
       }
+      setIsModalOpen(false);
+      setForm({ name: '', code: '', description: '' });
+      fetchDepts();
     } catch (err) {
-      setToast({ message: err.response?.data?.message ?? 'Failed to create department.', type: 'error' });
+      setToast({ message: err.response?.data?.message ?? 'Failed to save department.', type: 'error' });
     } finally {
       setSubmitting(false);
     }
@@ -73,7 +111,7 @@ const DepartmentsPage = () => {
         </div>
 
         {isAdmin && (
-          <button onClick={() => setIsModalOpen(true)} className="btn btn-primary">
+          <button onClick={handleOpenAdd} className="btn btn-primary">
             <Plus size={18} />
             <span>Add Department</span>
           </button>
@@ -81,7 +119,7 @@ const DepartmentsPage = () => {
       </div>
 
       <div className="glass-card" style={{ padding: '1.75rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>Active Departments ({filtered.length})</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '0.4rem 0.85rem', width: '240px' }}>
             <Search size={16} color="var(--text-muted)" />
@@ -94,7 +132,18 @@ const DepartmentsPage = () => {
             <div key={dept?.id} className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span className="badge badge-info">{dept?.code}</span>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ID: #{dept?.id}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  {isAdmin && (
+                    <>
+                      <button onClick={() => handleOpenEdit(dept)} className="btn btn-outline btn-sm" title="Edit Department">
+                        <Edit2 size={14} />
+                      </button>
+                      <button onClick={() => handleDelete(dept.id)} className="btn btn-danger btn-sm" title="Delete Department">
+                        <Trash2 size={14} />
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
               <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>{dept?.name}</h3>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', flex: 1 }}>{dept?.description || 'No description provided.'}</p>
@@ -103,7 +152,7 @@ const DepartmentsPage = () => {
         </div>
       </div>
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Create New Department">
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editId ? 'Edit Department' : 'Create New Department'}>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label className="form-label">Department Name</label>
@@ -119,7 +168,7 @@ const DepartmentsPage = () => {
           </div>
           <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
             <button type="button" onClick={() => setIsModalOpen(false)} className="btn btn-outline">Cancel</button>
-            <button type="submit" disabled={submitting} className="btn btn-primary">{submitting ? 'Creating...' : 'Save Department'}</button>
+            <button type="submit" disabled={submitting} className="btn btn-primary">{submitting ? 'Saving...' : (editId ? 'Update Department' : 'Save Department')}</button>
           </div>
         </form>
       </Modal>

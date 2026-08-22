@@ -123,6 +123,37 @@ const executeMockQuery = (sql, params) => {
     return { insertId: newId };
   }
 
+  // --- DEPARTMENTS MUTATIONS & QUERIES ---
+  if (upperSql.includes('INSERT INTO DEPARTMENTS')) {
+    const newId = mockStore.departments.length + 1;
+    const newDept = { id: newId, name: params[0], code: params[1], description: params[2] || '', head_employee_id: params[3] || null };
+    mockStore.departments.push(newDept);
+    return { insertId: newId };
+  }
+  if (upperSql.includes('UPDATE DEPARTMENTS SET') && upperSql.includes('WHERE ID')) {
+    const id = Number(params[params.length - 1]);
+    const dept = mockStore.departments.find(d => d.id === id);
+    if (dept) {
+      dept.name = params[0];
+      dept.code = params[1];
+      dept.description = params[2] || '';
+      dept.head_employee_id = params[3] || null;
+    }
+    return { affectedRows: 1 };
+  }
+  if (upperSql.includes('DELETE FROM DEPARTMENTS WHERE ID')) {
+    const id = Number(params[0]);
+    mockStore.departments = mockStore.departments.filter(d => d.id !== id);
+    return { affectedRows: 1 };
+  }
+  if (upperSql.includes('FROM DEPARTMENTS') && upperSql.includes('WHERE ID')) {
+    const dept = mockStore.departments.find(d => d.id === Number(params[0]));
+    return dept ? [dept] : [];
+  }
+  if (upperSql.includes('FROM DEPARTMENTS')) {
+    return mockStore.departments;
+  }
+
   // --- EMPLOYEES MUTATIONS & QUERIES ---
   if (upperSql.includes('INSERT INTO EMPLOYEES')) {
     const newId = mockStore.employees.length + 1;
@@ -311,7 +342,6 @@ const executeMockQuery = (sql, params) => {
   }
 
   // --- OTHER MODULE QUERIES ---
-  if (upperSql.includes('FROM DEPARTMENTS')) return mockStore.departments;
   if (upperSql.includes('FROM HOLIDAYS')) return mockStore.holidays;
   if (upperSql.includes('FROM ANNOUNCEMENTS')) return mockStore.announcements;
   if (upperSql.includes('FROM NOTIFICATIONS')) return mockStore.notifications.filter(n => n.user_id === Number(params[0]));
