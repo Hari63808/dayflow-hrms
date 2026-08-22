@@ -56,7 +56,9 @@ const mockStore = {
   tasks: [
     { id: 1, title: 'Complete Phase 4 HRMS Upgrade', description: 'Implement RBAC, tasks, and document vault.', assigned_to: 2, assigned_by: 1, due_date: '2026-08-25', priority: 'High', status: 'In Progress', created_at: new Date() }
   ],
-  performance_reviews: [],
+  performance_reviews: [
+    { id: 1, employee_id: 2, reviewer_name: 'Dayflow Admin', review_period: 'H1 2026', rating: 5, feedback: 'Exceeded project milestones and demonstrated outstanding team leadership.', goals: 'Lead backend microservice architecture refactoring.', created_at: new Date() }
+  ],
   documents: [],
   notifications: [
     { id: 1, user_id: 2, title: 'Welcome to Dayflow HRMS', message: 'Your employee profile is active. Check in for your shift today.', type: 'info', read_status: false, created_at: new Date() }
@@ -85,6 +87,7 @@ function loadMockStore() {
       if (data.payroll && Array.isArray(data.payroll)) mockStore.payroll = data.payroll;
       if (data.tasks && Array.isArray(data.tasks)) mockStore.tasks = data.tasks;
       if (data.departments && Array.isArray(data.departments)) mockStore.departments = data.departments;
+      if (data.performance_reviews && Array.isArray(data.performance_reviews)) mockStore.performance_reviews = data.performance_reviews;
     }
   } catch (err) {
     console.warn('Failed to load mockStore from file:', err.message);
@@ -122,6 +125,46 @@ initializeDatabase();
 const executeMockQuery = (sql, params = []) => {
   const cleanSql = sql.trim().replace(/\s+/g, ' ');
   const upperSql = cleanSql.toUpperCase();
+
+  // --- PERFORMANCE REVIEWS MODULE ---
+  if (upperSql.includes('INSERT INTO PERFORMANCE_REVIEWS')) {
+    const newId = mockStore.performance_reviews.length + 1;
+    const newReview = {
+      id: newId,
+      employee_id: Number(params[0]),
+      reviewer_name: params[1] || 'HR Director',
+      review_period: params[2],
+      rating: parseInt(params[3], 10) || 5,
+      feedback: params[4] || '',
+      goals: params[5] || '',
+      created_at: new Date()
+    };
+    mockStore.performance_reviews.push(newReview);
+    saveMockStore();
+    return { insertId: newId };
+  }
+  if (upperSql.includes('FROM PERFORMANCE_REVIEWS')) {
+    if (upperSql.includes('WHERE ID = ?')) {
+      const rev = mockStore.performance_reviews.find(r => r.id === Number(params[0]));
+      if (rev) {
+        const emp = mockStore.employees.find(e => e.id === rev.employee_id);
+        return [{ ...rev, first_name: emp?.first_name || '', last_name: emp?.last_name || '', department: emp?.department || '', designation: emp?.designation || '' }];
+      }
+      return [];
+    }
+    if (upperSql.includes('WHERE EMPLOYEE_ID = ?')) {
+      const targetEmpId = Number(params[0]);
+      const matched = mockStore.performance_reviews.filter(r => r.employee_id === targetEmpId);
+      return matched.map(r => {
+        const emp = mockStore.employees.find(e => e.id === r.employee_id);
+        return { ...r, first_name: emp?.first_name || '', last_name: emp?.last_name || '', department: emp?.department || '', designation: emp?.designation || '' };
+      });
+    }
+    return mockStore.performance_reviews.map(r => {
+      const emp = mockStore.employees.find(e => e.id === r.employee_id);
+      return { ...r, first_name: emp?.first_name || '', last_name: emp?.last_name || '', department: emp?.department || '', designation: emp?.designation || '' };
+    });
+  }
 
   // --- TASKS MODULE ---
   if (upperSql.includes('INSERT INTO TASKS')) {
@@ -422,7 +465,6 @@ const executeMockQuery = (sql, params = []) => {
   if (upperSql.includes('FROM HOLIDAYS')) return mockStore.holidays;
   if (upperSql.includes('FROM ANNOUNCEMENTS')) return mockStore.announcements;
   if (upperSql.includes('FROM NOTIFICATIONS')) return mockStore.notifications.filter(n => n.user_id === Number(params[0]));
-  if (upperSql.includes('FROM PERFORMANCE_REVIEWS')) return mockStore.performance_reviews;
   if (upperSql.includes('FROM DOCUMENTS')) return mockStore.documents;
   if (upperSql.includes('FROM AUDIT_LOGS')) return mockStore.audit_logs;
   if (upperSql.includes('FROM ATTENDANCE_CORRECTIONS')) return mockStore.attendance_corrections;
