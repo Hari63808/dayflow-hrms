@@ -18,14 +18,14 @@ const AttendancePage = () => {
     try {
       if (isAdmin) {
         const res = await attendanceService.getAllAttendance();
-        if (res.success) setAttendance(res.attendance);
+        if (res?.success) setAttendance(res.attendance ?? []);
       } else {
         const [resHist, resToday] = await Promise.all([
           attendanceService.getMyAttendance(),
           attendanceService.getTodayStatus()
         ]);
-        if (resHist.success) setAttendance(resHist.attendance);
-        if (resToday.success) setTodayRecord(resToday.today);
+        if (resHist?.success) setAttendance(resHist.attendance ?? []);
+        if (resToday?.success) setTodayRecord(resToday.today ?? null);
       }
     } catch (err) {
       console.error('Failed to fetch attendance:', err);
@@ -41,8 +41,8 @@ const AttendancePage = () => {
   const handleCheckIn = async () => {
     try {
       const res = await attendanceService.checkIn();
-      if (res.success) {
-        setToast({ message: res.message, type: 'success' });
+      if (res?.success) {
+        setToast({ message: res.message ?? 'Checked in successfully!', type: 'success' });
         fetchAttendance();
       }
     } catch (err) {
@@ -53,8 +53,8 @@ const AttendancePage = () => {
   const handleCheckOut = async () => {
     try {
       const res = await attendanceService.checkOut();
-      if (res.success) {
-        setToast({ message: res.message, type: 'success' });
+      if (res?.success) {
+        setToast({ message: res.message ?? 'Checked out successfully!', type: 'success' });
         fetchAttendance();
       }
     } catch (err) {
@@ -62,11 +62,12 @@ const AttendancePage = () => {
     }
   };
 
-  const filteredAttendance = attendance.filter(item => {
-    const term = searchTerm.toLowerCase();
-    const empName = `${item.first_name || ''} ${item.last_name || ''}`.toLowerCase();
-    const date = (item.date || '').toLowerCase();
-    const status = (item.status || '').toLowerCase();
+  const safeAttendance = attendance ?? [];
+  const filteredAttendance = safeAttendance.filter(item => {
+    const term = (searchTerm ?? '').toLowerCase();
+    const empName = `${item?.first_name || ''} ${item?.last_name || ''}`.toLowerCase();
+    const date = (item?.date || '').toLowerCase();
+    const status = (item?.status || '').toLowerCase();
     return empName.includes(term) || date.includes(term) || status.includes(term);
   });
 
@@ -184,9 +185,9 @@ const AttendancePage = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredAttendance.map((record) => {
+                {filteredAttendance.map((record, idx) => {
                   let durationStr = '--';
-                  if (record.check_in && record.check_out) {
+                  if (record?.check_in && record?.check_out) {
                     const diffMs = new Date(record.check_out) - new Date(record.check_in);
                     const hours = Math.floor(diffMs / (1000 * 60 * 60));
                     const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
@@ -194,24 +195,24 @@ const AttendancePage = () => {
                   }
 
                   return (
-                    <tr key={record.id}>
+                    <tr key={record?.id ?? idx}>
                       {isAdmin && (
                         <td>
-                          <div style={{ fontWeight: 600 }}>{record.first_name} {record.last_name}</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{record.department}</div>
+                          <div style={{ fontWeight: 600 }}>{record?.first_name ?? 'Employee'} {record?.last_name ?? ''}</div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{record?.department ?? ''}</div>
                         </td>
                       )}
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}>
                           <Calendar size={14} color="var(--primary)" />
-                          <span>{record.date}</span>
+                          <span>{record?.date}</span>
                         </div>
                       </td>
-                      <td>{record.check_in ? new Date(record.check_in).toLocaleTimeString() : '--:--'}</td>
-                      <td>{record.check_out ? new Date(record.check_out).toLocaleTimeString() : '--:--'}</td>
+                      <td>{record?.check_in ? new Date(record.check_in).toLocaleTimeString() : '--:--'}</td>
+                      <td>{record?.check_out ? new Date(record.check_out).toLocaleTimeString() : '--:--'}</td>
                       <td style={{ fontWeight: 600, color: 'var(--text-muted)' }}>{durationStr}</td>
-                      <td><StatusBadge status={record.status} /></td>
-                      <td style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{record.notes || '—'}</td>
+                      <td><StatusBadge status={record?.status ?? 'Present'} /></td>
+                      <td style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{record?.notes || '—'}</td>
                     </tr>
                   );
                 })}

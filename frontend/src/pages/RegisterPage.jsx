@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Toast from '../components/Toast';
-import { User, Mail, Lock, Phone, MapPin, Building, Briefcase, UserPlus } from 'lucide-react';
+import { User, Mail, Lock, Building, Briefcase, UserPlus } from 'lucide-react';
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    confirmPassword: '',
     firstName: '',
     lastName: '',
     role: 'employee',
@@ -28,24 +29,35 @@ const RegisterPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (formData.password.length < 6) {
+      setToast({ message: 'Password must be at least 6 characters long.', type: 'error' });
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setToast({ message: 'Passwords do not match. Please check and try again.', type: 'error' });
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await register(formData);
-      if (res.success) {
-        setToast({ message: 'Registration successful! Redirecting...', type: 'success' });
+      if (res?.success) {
+        setToast({ message: 'Account registered successfully! Logging you in...', type: 'success' });
         setTimeout(() => {
-          if (res.user.role === 'admin') {
+          if (res?.user?.role === 'admin') {
             navigate('/admin-dashboard');
           } else {
             navigate('/dashboard');
           }
         }, 500);
       } else {
-        setToast({ message: res.message || 'Registration failed', type: 'error' });
+        setToast({ message: res?.message || 'Registration failed.', type: 'error' });
       }
     } catch (err) {
       setToast({
-        message: err.response?.data?.message || 'Error registering user.',
+        message: err.response?.data?.message || 'Error registering user account.',
         type: 'error'
       });
     } finally {
@@ -57,12 +69,12 @@ const RegisterPage = () => {
     <div className="glass-card" style={{ padding: '2.5rem' }}>
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-      <div style={{ marginBottom: '1.5rem' }}>
+      <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
         <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-main)' }}>
-          Create Account ✨
+          Create Workforce Account ✨
         </h2>
         <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-          Join Dayflow HRMS workforce management.
+          Register to access Dayflow HRMS employee features
         </p>
       </div>
 
@@ -107,22 +119,36 @@ const RegisterPage = () => {
           />
         </div>
 
-        <div className="form-group">
-          <label className="form-label">Password</label>
-          <input
-            type="password"
-            name="password"
-            className="form-input"
-            placeholder="••••••••"
-            value={formData.password}
-            onChange={handleChange}
-            required
-          />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div className="form-group">
+            <label className="form-label">Password</label>
+            <input
+              type="password"
+              name="password"
+              className="form-input"
+              placeholder="••••••••"
+              value={formData.password}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Confirm Password</label>
+            <input
+              type="password"
+              name="confirmPassword"
+              className="form-input"
+              placeholder="••••••••"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              required
+            />
+          </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <div className="form-group">
-            <label className="form-label">Account Role</label>
+            <label className="form-label">Role</label>
             <select
               name="role"
               className="form-select"

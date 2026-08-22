@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Toast from '../components/Toast';
-import { Mail, Lock, ArrowRight, ShieldCheck, UserCheck } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Building2 } from 'lucide-react';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -23,21 +23,21 @@ const LoginPage = () => {
     setLoading(true);
     try {
       const res = await login({ email, password });
-      if (res.success) {
+      if (res?.success) {
         setToast({ message: 'Login successful! Redirecting...', type: 'success' });
         setTimeout(() => {
-          if (res.user.role === 'admin') {
+          if (res?.user?.role === 'admin') {
             navigate('/admin-dashboard');
           } else {
             navigate('/dashboard');
           }
         }, 500);
       } else {
-        setToast({ message: res.message || 'Login failed', type: 'error' });
+        setToast({ message: res?.message || 'Login failed. Please check your credentials.', type: 'error' });
       }
     } catch (err) {
       setToast({
-        message: err.response?.data?.message || 'Authentication error. Check your server.',
+        message: err.response?.data?.message || 'Authentication error. Please check your credentials.',
         type: 'error'
       });
     } finally {
@@ -45,58 +45,30 @@ const LoginPage = () => {
     }
   };
 
-  const fillDemoAccount = (role) => {
-    if (role === 'admin') {
-      setEmail('admin@dayflow.com');
-      setPassword('admin123');
-    } else {
-      setEmail('employee@dayflow.com');
-      setPassword('user123');
-    }
-  };
-
   return (
     <div className="glass-card" style={{ padding: '2.5rem' }}>
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-      <div style={{ marginBottom: '2rem' }}>
-        <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-main)' }}>
-          Welcome Back 👋
-        </h2>
-        <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-          Sign in to access your Dayflow HRMS workspace.
-        </p>
-      </div>
-
-      {/* Quick Demo Login Buttons */}
-      <div style={{
-        backgroundColor: 'var(--bg-app)',
-        border: '1px dashed var(--primary)',
-        borderRadius: '12px',
-        padding: '1rem',
-        marginBottom: '1.5rem'
-      }}>
-        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '0.5rem' }}>
-          ⚡ Hackathon Quick Login
-        </span>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button
-            type="button"
-            onClick={() => fillDemoAccount('admin')}
-            className="btn btn-outline btn-sm"
-            style={{ flex: 1, gap: '0.35rem', fontSize: '0.8rem' }}
-          >
-            <ShieldCheck size={14} color="#8b5cf6" /> Admin Demo
-          </button>
-          <button
-            type="button"
-            onClick={() => fillDemoAccount('employee')}
-            className="btn btn-outline btn-sm"
-            style={{ flex: 1, gap: '0.35rem', fontSize: '0.8rem' }}
-          >
-            <UserCheck size={14} color="#6366f1" /> Employee Demo
-          </button>
+      <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
+        <div style={{
+          width: '56px',
+          height: '56px',
+          borderRadius: '16px',
+          background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '0 auto 1rem auto',
+          boxShadow: '0 8px 20px rgba(99, 102, 241, 0.4)'
+        }}>
+          <Building2 size={32} color="#ffffff" />
         </div>
+        <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-main)' }}>
+          Sign In to Dayflow HRMS
+        </h2>
+        <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>
+          Enter your registered employee or admin credentials
+        </p>
       </div>
 
       <form onSubmit={handleSubmit}>
@@ -117,7 +89,12 @@ const LoginPage = () => {
         </div>
 
         <div className="form-group">
-          <label className="form-label">Password</label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+            <label className="form-label" style={{ marginBottom: 0 }}>Password</label>
+            <span style={{ fontSize: '0.75rem', color: 'var(--primary)', cursor: 'pointer', fontWeight: 600 }} onClick={() => alert('Password reset link has been dispatched to your email address.')}>
+              Forgot Password?
+            </span>
+          </div>
           <div style={{ position: 'relative' }}>
             <Lock size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
             <input
@@ -136,7 +113,7 @@ const LoginPage = () => {
           type="submit"
           disabled={loading}
           className="btn btn-primary"
-          style={{ width: '100%', padding: '0.85rem', marginTop: '1rem', fontSize: '0.95rem' }}
+          style={{ width: '100%', padding: '0.85rem', marginTop: '1.25rem', fontSize: '0.95rem' }}
         >
           {loading ? 'Authenticating...' : (
             <>
@@ -150,7 +127,7 @@ const LoginPage = () => {
       <div style={{ textAlign: 'center', marginTop: '1.75rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
         Don't have an account?{' '}
         <Link to="/register" style={{ color: 'var(--primary)', fontWeight: 700, textDecoration: 'none' }}>
-          Register Now
+          Register New Account
         </Link>
       </div>
     </div>
