@@ -5,7 +5,7 @@ const db = require('../config/db');
 // @access  Private
 const getTasks = async (req, res) => {
   try {
-    let tasks;
+    let tasks = [];
     const userRole = (req.user?.role || '').toString().trim().toLowerCase();
     const isAdmin = userRole === 'admin' || userRole === 'hr' || userRole === 'superadmin' || userRole === 'lead';
 
@@ -17,11 +17,22 @@ const getTasks = async (req, res) => {
         ORDER BY t.due_date ASC
       `);
     } else {
-      const empId = req.employee ? req.employee.id : 0;
-      tasks = await db.query(
-        'SELECT * FROM tasks WHERE assigned_to = ? ORDER BY due_date ASC',
-        [empId]
-      );
+      let empId = req.employee ? req.employee.id : null;
+      if (!empId && req.user) {
+        const emps = await db.query('SELECT id FROM employees WHERE user_id = ? OR LOWER(email) = LOWER(?)', [req.user.id, req.user.email]);
+        if (emps && emps.length > 0) {
+          empId = emps[0].id;
+        }
+      }
+
+      if (empId) {
+        tasks = await db.query(
+          'SELECT * FROM tasks WHERE assigned_to = ? ORDER BY due_date ASC',
+          [empId]
+        );
+      } else {
+        tasks = [];
+      }
     }
     return res.json({ success: true, count: tasks.length, tasks });
   } catch (error) {
@@ -53,7 +64,7 @@ const addTask = async (req, res) => {
 
     // Create notification for assigned employee
     const targetEmps = await db.query('SELECT user_id FROM employees WHERE id = ?', [empId]);
-    if (targetEmps && targetEmps.length > 0) {
+    if (targetEmps && targetEmps.length > 0 && targetEmps[0].user_id) {
       await db.query(
         'INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)',
         [targetEmps[0].user_id, 'New Task Assigned', `You have been assigned task: "${title}"`, 'info']

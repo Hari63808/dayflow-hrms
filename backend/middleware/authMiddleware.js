@@ -18,8 +18,12 @@ const protect = async (req, res, next) => {
 
       req.user = users[0];
 
-      // Fetch corresponding employee record if present
-      const employees = await db.query('SELECT * FROM employees WHERE user_id = ?', [req.user.id]);
+      // Fetch corresponding employee record by user_id or email
+      let employees = await db.query('SELECT * FROM employees WHERE user_id = ?', [req.user.id]);
+      if (!employees || employees.length === 0) {
+        employees = await db.query('SELECT * FROM employees WHERE LOWER(email) = LOWER(?)', [req.user.email]);
+      }
+
       if (employees && employees.length > 0) {
         req.employee = employees[0];
       }
