@@ -291,7 +291,16 @@
       "priority": "High",
       "target_department": "All",
       "author_name": "Dayflow Admin",
-      "created_at": "2026-08-22T08:44:10.332Z"
+      "created_at": "2026-08-22T08:48:15.196Z"
+    },
+    {
+      "id": 2,
+      "title": "jkb ",
+      "content": "n m",
+      "priority": "Normal",
+      "target_department": "All",
+      "author_name": "HariHaran K",
+      "created_at": "2026-08-22T08:48:51.761Z"
     }
   ],
   "tasks": [
@@ -350,7 +359,7 @@
       "type": "info",
       "is_read": false,
       "read_status": false,
-      "created_at": "2026-08-22T08:44:10.332Z"
+      "created_at": "2026-08-22T08:48:15.196Z"
     },
     {
       "id": 2,
@@ -360,7 +369,7 @@
       "type": "info",
       "is_read": false,
       "read_status": false,
-      "created_at": "2026-08-22T08:44:10.332Z"
+      "created_at": "2026-08-22T08:48:15.196Z"
     },
     {
       "id": 3,
@@ -370,7 +379,7 @@
       "type": "leave",
       "is_read": false,
       "read_status": false,
-      "created_at": "2026-08-22T08:44:10.332Z"
+      "created_at": "2026-08-22T08:48:15.196Z"
     },
     {
       "id": 4,
@@ -380,7 +389,7 @@
       "type": "task",
       "is_read": false,
       "read_status": false,
-      "created_at": "2026-08-22T08:44:10.332Z"
+      "created_at": "2026-08-22T08:48:15.196Z"
     },
     {
       "id": 5,
@@ -390,7 +399,7 @@
       "type": "appraisal",
       "is_read": false,
       "read_status": false,
-      "created_at": "2026-08-22T08:44:10.332Z"
+      "created_at": "2026-08-22T08:48:15.196Z"
     },
     {
       "id": 6,
@@ -400,67 +409,67 @@
       "type": "announcement",
       "is_read": false,
       "read_status": false,
-      "created_at": "2026-08-22T08:44:10.332Z"
+      "created_at": "2026-08-22T08:48:15.196Z"
     },
     {
       "id": 7,
       "user_id": 1,
-      "title": "🔵 New Announcement: gfgffdf",
-      "message": "dfdfg",
+      "title": "🔵 New Announcement: jkb ",
+      "message": "n m",
       "type": "announcement",
       "is_read": false,
       "read_status": false,
-      "created_at": "2026-08-22T08:45:16.965Z"
+      "created_at": "2026-08-22T08:48:51.764Z"
     },
     {
       "id": 8,
       "user_id": 2,
-      "title": "🔵 New Announcement: gfgffdf",
-      "message": "dfdfg",
+      "title": "🔵 New Announcement: jkb ",
+      "message": "n m",
       "type": "announcement",
       "is_read": false,
       "read_status": false,
-      "created_at": "2026-08-22T08:45:16.968Z"
+      "created_at": "2026-08-22T08:48:51.767Z"
     },
     {
       "id": 9,
       "user_id": 3,
-      "title": "🔵 New Announcement: gfgffdf",
-      "message": "dfdfg",
+      "title": "🔵 New Announcement: jkb ",
+      "message": "n m",
       "type": "announcement",
       "is_read": false,
       "read_status": false,
-      "created_at": "2026-08-22T08:45:16.971Z"
+      "created_at": "2026-08-22T08:48:51.768Z"
     },
     {
       "id": 10,
       "user_id": 4,
-      "title": "🔵 New Announcement: gfgffdf",
-      "message": "dfdfg",
+      "title": "🔵 New Announcement: jkb ",
+      "message": "n m",
       "type": "announcement",
       "is_read": false,
       "read_status": false,
-      "created_at": "2026-08-22T08:45:16.972Z"
+      "created_at": "2026-08-22T08:48:51.769Z"
     },
     {
       "id": 11,
       "user_id": 5,
-      "title": "🔵 New Announcement: gfgffdf",
-      "message": "dfdfg",
+      "title": "🔵 New Announcement: jkb ",
+      "message": "n m",
       "type": "announcement",
       "is_read": false,
       "read_status": false,
-      "created_at": "2026-08-22T08:45:16.972Z"
+      "created_at": "2026-08-22T08:48:51.770Z"
     },
     {
       "id": 12,
       "user_id": 6,
-      "title": "🔵 New Announcement: gfgffdf",
-      "message": "dfdfg",
+      "title": "🔵 New Announcement: jkb ",
+      "message": "n m",
       "type": "announcement",
       "is_read": false,
       "read_status": false,
-      "created_at": "2026-08-22T08:45:16.973Z"
+      "created_at": "2026-08-22T08:48:51.770Z"
     }
   ],
   "audit_logs": []

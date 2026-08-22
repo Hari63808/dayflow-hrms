@@ -1,6 +1,6 @@
 const { generateAIResponse } = require('../services/geminiService');
 
-// @desc    Process AI Chatbot message
+// @desc    Process AI Chatbot message via Google Gemini API / HR Assistant Engine
 // @route   POST /api/ai/chat
 // @access  Private
 const chatWithAI = async (req, res) => {
@@ -15,7 +15,8 @@ const chatWithAI = async (req, res) => {
 
     return res.json({
       success: true,
-      reply,
+      response: reply,
+      reply: reply,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
@@ -23,6 +24,7 @@ const chatWithAI = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Failed to process AI chat message.',
+      response: 'I am having trouble connecting to AI services right now. Please try again shortly.',
       reply: 'I am having trouble connecting to AI services right now. Please try again shortly.'
     });
   }
