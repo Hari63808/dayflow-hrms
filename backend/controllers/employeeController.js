@@ -23,13 +23,19 @@ const getProfile = async (req, res) => {
 const updateProfile = async (req, res) => {
   try {
     const { phone, address } = req.body;
-    if (!req.employee) {
+    let empId = req.employee ? req.employee.id : null;
+    if (!empId && req.user) {
+      const emps = await db.query('SELECT id FROM employees WHERE user_id = ? OR LOWER(email) = LOWER(?)', [req.user.id, req.user.email]);
+      if (emps && emps.length > 0) empId = emps[0].id;
+    }
+
+    if (!empId) {
       return res.status(404).json({ success: false, message: 'Employee profile record missing.' });
     }
 
-    await db.query('UPDATE employees SET phone = ?, address = ? WHERE id = ?', [phone || '', address || '', req.employee.id]);
+    await db.query('UPDATE employees SET phone = ?, address = ? WHERE id = ?', [phone || '', address || '', empId]);
 
-    const updated = await db.query('SELECT * FROM employees WHERE id = ?', [req.employee.id]);
+    const updated = await db.query('SELECT * FROM employees WHERE id = ?', [empId]);
 
     return res.json({
       success: true,
@@ -51,21 +57,43 @@ const uploadAvatar = async (req, res) => {
       return res.status(400).json({ success: false, message: 'No image file uploaded.' });
     }
 
-    const avatarPath = `/uploads/${req.file.filename}`;
-    const avatarUrl = `http://localhost:${process.env.PORT || 5000}${avatarPath}`;
+    console.log("FILE:", req.file);
 
-    if (!req.employee) {
+    const host = req.get('host') || 'localhost:5000';
+    const protocol = req.protocol || 'http';
+    const avatarPath = `/uploads/${req.file.filename}`;
+    const avatarUrl = `${protocol}://${host}${avatarPath}`;
+
+    let empId = req.employee ? req.employee.id : null;
+    let userId = req.user ? req.user.id : null;
+
+    if (!empId && userId) {
+      const emps = await db.query('SELECT id FROM employees WHERE user_id = ? OR LOWER(email) = LOWER(?)', [userId, req.user.email]);
+      if (emps && emps.length > 0) empId = emps[0].id;
+    }
+
+    if (!empId) {
       return res.status(404).json({ success: false, message: 'Employee profile missing.' });
     }
 
-    await db.query('UPDATE employees SET avatar_url = ? WHERE id = ?', [avatarUrl, req.employee.id]);
-    const updated = await db.query('SELECT * FROM employees WHERE id = ?', [req.employee.id]);
+    console.log("EMPLOYEE BEFORE:", req.employee?.avatar_url);
+
+    await db.query('UPDATE employees SET avatar_url = ? WHERE id = ?', [avatarUrl, empId]);
+    if (userId) {
+      await db.query('UPDATE employees SET avatar_url = ? WHERE user_id = ?', [avatarUrl, userId]);
+    }
+
+    const updated = await db.query('SELECT * FROM employees WHERE id = ?', [empId]);
+    const updatedEmployee = updated[0] || { ...req.employee, avatar_url: avatarUrl };
+
+    console.log("EMPLOYEE AFTER:", updatedEmployee.avatar_url);
+    console.log("RETURNING API AVATAR URL:", avatarUrl);
 
     return res.json({
       success: true,
       message: 'Profile picture uploaded successfully!',
       avatar_url: avatarUrl,
-      employee: updated[0]
+      employee: updatedEmployee
     });
   } catch (error) {
     console.error('uploadAvatar Error:', error);
@@ -97,13 +125,11 @@ const addEmployee = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Required fields missing (email, password, firstName, lastName).' });
     }
 
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({ success: false, message: 'Please provide a valid email address.' });
     }
 
-    // Validate password length
     if (password.length < 6) {
       return res.status(400).json({ success: false, message: 'Password must be at least 6 characters long.' });
     }
@@ -200,7 +226,6 @@ const deleteEmployee = async (req, res) => {
 
     const emp = existing[0];
 
-    // Delete employee (cascades or deletes associated user)
     await db.query('DELETE FROM employees WHERE id = ?', [id]);
     await db.query('DELETE FROM users WHERE id = ?', [emp.user_id]);
 

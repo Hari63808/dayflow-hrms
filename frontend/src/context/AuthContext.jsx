@@ -60,11 +60,21 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('dayflow_user');
   };
 
-  const updateUser = (updatedUser) => {
+  const updateUser = (updatedData) => {
     setUser(prev => {
-      const merged = { ...prev, ...updatedUser };
-      localStorage.setItem('dayflow_user', JSON.stringify(merged));
-      return merged;
+      console.log("BEFORE USER in AuthContext:", prev);
+      console.log("NEW DATA in AuthContext:", updatedData);
+      const mergedUser = {
+        ...prev,
+        ...updatedData,
+        employee: updatedData?.employee
+          ? { ...(prev?.employee || {}), ...updatedData.employee }
+          : prev?.employee
+      };
+      console.log("AFTER MERGE User in AuthContext:", mergedUser);
+      console.log("avatar_url after merge:", mergedUser?.employee?.avatar_url);
+      localStorage.setItem('dayflow_user', JSON.stringify(mergedUser));
+      return mergedUser;
     });
   };
 

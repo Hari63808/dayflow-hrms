@@ -63,13 +63,22 @@ const ProfilePage = () => {
     setUploading(true);
     try {
       const res = await employeeService.uploadAvatar(formData);
-      if (res?.success && res?.employee) {
+      console.log("UPLOAD RESPONSE:", res);
+      console.log("RESPONSE EMPLOYEE:", res?.employee);
+      console.log("RESPONSE AVATAR:", res?.employee?.avatar_url || res?.avatar_url);
+
+      if (res?.success) {
+        const updatedEmp = res.employee || { ...profile, avatar_url: res.avatar_url };
         setToast({ message: res.message ?? 'Avatar updated successfully.', type: 'success' });
-        setProfile(res.employee);
-        updateUser({ employee: res.employee });
-        console.log("Updated employee avatar_url:", res.employee.avatar_url);
+        setProfile(updatedEmp);
+        updateUser({ employee: updatedEmp });
+
+        const localUser = JSON.parse(localStorage.getItem('dayflow_user'));
+        console.log("localStorage dayflow_user:", localUser);
+        console.log("localStorage avatar_url:", localUser?.employee?.avatar_url);
       }
     } catch (err) {
+      console.error("Avatar upload error:", err);
       setToast({ message: err.response?.data?.message ?? 'Avatar upload failed.', type: 'error' });
     } finally {
       setUploading(false);
@@ -80,6 +89,7 @@ const ProfilePage = () => {
 
   const safeProfile = profile ?? user?.employee ?? {};
   const avatarSrc = getAvatarUrl(safeProfile?.avatar_url, safeProfile?.first_name || user?.email);
+  console.log("Rendered avatar_url:", avatarSrc);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', maxWidth: '1000px', margin: '0 auto' }}>
