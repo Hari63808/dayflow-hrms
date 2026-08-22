@@ -162,6 +162,4 @@ npm run dev
 - **Abhishek**
 - **Sabari**
 
----
 
-*Dayflow HRMS – Built with ❤️ for Odoo x NMIT Hackathon 2026.*
