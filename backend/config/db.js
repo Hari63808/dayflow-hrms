@@ -7,7 +7,7 @@ dotenv.config();
 let pool = null;
 let isMockMode = false;
 
-// Mock database store for seamless fallback when MySQL is offline during hackathon review
+// Stateful store initialization for database fallback
 const mockStore = {
   users: [
     { id: 1, email: 'admin@dayflow.com', password_hash: '$2a$10$CwTycUXWue0Thq9StjUM0uJ81/Q1QxGk5jK67Y9w1Z.c9h8.a7G9G', role: 'admin', created_at: new Date() },
@@ -24,12 +24,22 @@ const mockStore = {
   attendance: [
     { id: 1, employee_id: 2, date: new Date().toISOString().split('T')[0], check_in: new Date().toISOString().replace('T', ' ').substring(0, 19), check_out: null, status: 'Present', notes: 'Checked in via web portal' },
     { id: 2, employee_id: 3, date: new Date().toISOString().split('T')[0], check_in: new Date().toISOString().replace('T', ' ').substring(0, 19), check_out: new Date().toISOString().replace('T', ' ').substring(0, 19), status: 'Present', notes: 'Completed shift' },
-    { id: 3, employee_id: 4, date: new Date().toISOString().split('T')[0], check_in: null, check_out: null, status: 'Absent', notes: 'Uninformed absence' }
+    { id: 3, employee_id: 4, date: new Date().toISOString().split('T')[0], check_in: null, check_out: null, status: 'Absent', notes: 'Uninformed absence' },
+    // Historical trends data for chart generation
+    { id: 4, employee_id: 2, date: new Date(Date.now() - 86400000).toISOString().split('T')[0], check_in: '09:00:00', check_out: '17:05:00', status: 'Present', notes: '' },
+    { id: 5, employee_id: 3, date: new Date(Date.now() - 86400000).toISOString().split('T')[0], check_in: '09:15:00', check_out: '17:30:00', status: 'Present', notes: '' },
+    { id: 6, employee_id: 4, date: new Date(Date.now() - 86400000).toISOString().split('T')[0], check_in: '08:50:00', check_out: '17:00:00', status: 'Present', notes: '' },
+    { id: 7, employee_id: 2, date: new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0], check_in: '09:10:00', check_out: '13:00:00', status: 'Half-Day', notes: 'Doctor appointment' },
+    { id: 8, employee_id: 3, date: new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0], check_in: '09:00:00', check_out: '17:15:00', status: 'Present', notes: '' },
+    { id: 9, employee_id: 2, date: new Date(Date.now() - 3 * 86400000).toISOString().split('T')[0], check_in: '08:55:00', check_out: '17:00:00', status: 'Present', notes: '' },
+    { id: 10, employee_id: 3, date: new Date(Date.now() - 3 * 86400000).toISOString().split('T')[0], check_in: '09:05:00', check_out: '17:20:00', status: 'Present', notes: '' },
+    { id: 11, employee_id: 4, date: new Date(Date.now() - 3 * 86400000).toISOString().split('T')[0], check_in: null, check_out: null, status: 'Absent', notes: 'Sick' }
   ],
   leave_requests: [
-    { id: 1, employee_id: 2, leave_type: 'Sick', start_date: '2026-08-25', end_date: '2026-08-26', reason: 'Feeling unwell, scheduled doctor appointment.', status: 'Pending', admin_comment: null, created_at: new Date() },
+    { id: 1, employee_id: 2, leave_type: 'Sick', start_date: '2026-08-25', end_date: '2026-08-26', reason: 'Feeling unwell, scheduled medical checkup.', status: 'Pending', admin_comment: null, created_at: new Date() },
     { id: 2, employee_id: 3, leave_type: 'Casual', start_date: '2026-09-01', end_date: '2026-09-03', reason: 'Family event out of town.', status: 'Approved', admin_comment: 'Approved! Have a nice break.', created_at: new Date() },
-    { id: 3, employee_id: 4, leave_type: 'Paid', start_date: '2026-08-15', end_date: '2026-08-16', reason: 'Personal errands.', status: 'Rejected', admin_comment: 'High priority project release scheduled.', created_at: new Date() }
+    { id: 3, employee_id: 4, leave_type: 'Paid', start_date: '2026-08-15', end_date: '2026-08-16', reason: 'Personal errands.', status: 'Rejected', admin_comment: 'High priority project release scheduled.', created_at: new Date() },
+    { id: 4, employee_id: 2, leave_type: 'Paid', start_date: '2026-07-10', end_date: '2026-07-12', reason: 'Summer vacation.', status: 'Approved', admin_comment: 'Enjoy your vacation!', created_at: new Date(Date.now() - 5 * 86400000) }
   ],
   payroll: [
     { id: 1, employee_id: 2, month: '2026-08', basic_salary: 7500.00, bonus: 500.00, deductions: 350.00, net_salary: 7650.00, payment_date: '2026-08-01', status: 'Paid' },
@@ -51,7 +61,6 @@ const initializeDatabase = async () => {
       queueLimit: 0
     });
 
-    // Test connection
     const connection = await pool.getConnection();
     console.log('✅ Connected successfully to MySQL Database!');
     connection.release();
@@ -64,7 +73,6 @@ const initializeDatabase = async () => {
 
 initializeDatabase();
 
-// Utility database query wrapper
 const query = async (sql, params = []) => {
   if (!isMockMode && pool) {
     try {
@@ -76,7 +84,6 @@ const query = async (sql, params = []) => {
     }
   }
 
-  // Fallback Mock Query Processing
   return executeMockQuery(sql, params);
 };
 
@@ -111,6 +118,11 @@ const executeMockQuery = (sql, params) => {
     return { insertId: newId };
   }
 
+  // COUNT EMPLOYEES
+  if (cleanSql.toUpperCase().includes('SELECT COUNT(*) AS COUNT FROM EMPLOYEES')) {
+    return [{ count: mockStore.employees.length }];
+  }
+
   // SELECT employee by user_id
   if (cleanSql.toUpperCase().includes('FROM EMPLOYEES') && cleanSql.toUpperCase().includes('WHERE USER_ID')) {
     const userId = params[0];
@@ -125,7 +137,7 @@ const executeMockQuery = (sql, params) => {
     return emp ? [emp] : [];
   }
 
-  // SELECT all employees with user role
+  // SELECT all employees
   if (cleanSql.toUpperCase().includes('FROM EMPLOYEES') && !cleanSql.toUpperCase().includes('WHERE')) {
     return mockStore.employees.map(emp => {
       const u = mockStore.users.find(usr => usr.id === emp.user_id);
@@ -156,7 +168,6 @@ const executeMockQuery = (sql, params) => {
 
   // UPDATE employees
   if (cleanSql.toUpperCase().includes('UPDATE EMPLOYEES')) {
-    // Phone & Address update or Full update
     if (cleanSql.toUpperCase().includes('SET PHONE = ?, ADDRESS = ?')) {
       const phone = params[0];
       const address = params[1];
@@ -175,7 +186,6 @@ const executeMockQuery = (sql, params) => {
       if (emp) emp.avatar_url = avatarUrl;
       return { affectedRows: emp ? 1 : 0 };
     }
-    // Full admin update
     const empId = params[params.length - 1];
     const emp = mockStore.employees.find(e => e.id === Number(empId));
     if (emp) {
@@ -215,7 +225,10 @@ const executeMockQuery = (sql, params) => {
         .filter(a => a.employee_id === Number(empId))
         .sort((a, b) => new Date(b.date) - new Date(a.date));
     }
-    // Admin list view with employee details
+    if (cleanSql.toUpperCase().includes('WHERE DATE = ?')) {
+      const date = params[0];
+      return mockStore.attendance.filter(a => a.date === date);
+    }
     return mockStore.attendance.map(att => {
       const emp = mockStore.employees.find(e => e.id === att.employee_id);
       return {
@@ -265,7 +278,6 @@ const executeMockQuery = (sql, params) => {
         .filter(l => l.employee_id === Number(empId))
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     }
-    // Admin list all leave requests
     return mockStore.leave_requests.map(l => {
       const emp = mockStore.employees.find(e => e.id === l.employee_id);
       return {
@@ -296,7 +308,7 @@ const executeMockQuery = (sql, params) => {
     return { insertId: newId };
   }
 
-  // UPDATE leave_requests (approve/reject/comment)
+  // UPDATE leave_requests
   if (cleanSql.toUpperCase().includes('UPDATE LEAVE_REQUESTS')) {
     const status = params[0];
     const comment = params[1];
@@ -317,7 +329,6 @@ const executeMockQuery = (sql, params) => {
         .filter(p => p.employee_id === Number(empId))
         .sort((a, b) => b.month.localeCompare(a.month));
     }
-    // Admin list all payroll
     return mockStore.payroll.map(p => {
       const emp = mockStore.employees.find(e => e.id === p.employee_id);
       return {
@@ -385,7 +396,6 @@ const executeMockQuery = (sql, params) => {
     return { affectedRows: 1 };
   }
 
-  // Default empty return
   return [];
 };
 

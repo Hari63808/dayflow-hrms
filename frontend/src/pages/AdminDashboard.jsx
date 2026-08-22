@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { dashboardService } from '../services/dashboardService';
-import { leaveService } from '../services/leaveService';
 import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
 import Loader from '../components/Loader';
@@ -8,68 +7,80 @@ import Toast from '../components/Toast';
 import { 
   Users, 
   UserCheck, 
+  UserX,
   CalendarDays, 
+  CheckCircle2, 
   CircleDollarSign, 
-  ArrowUpRight, 
-  Check, 
-  X, 
-  ShieldCheck 
+  RefreshCw, 
+  Activity, 
+  BarChart3, 
+  PieChart as PieIcon,
+  ShieldCheck,
+  Clock,
+  ArrowUpRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { 
+  ResponsiveContainer, 
+  AreaChart, 
+  Area, 
+  BarChart, 
+  Bar, 
+  PieChart, 
+  Pie, 
+  Cell, 
+  XAxis, 
+  YAxis, 
+  Tooltip, 
+  CartesianGrid, 
+  Legend 
+} from 'recharts';
+
+const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#f43f5e'];
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
   const [toast, setToast] = useState(null);
 
-  const fetchAdminStats = async () => {
+  const fetchAdminStats = async (isManual = false) => {
+    if (isManual) setRefreshing(true);
+    setError(null);
     try {
       const res = await dashboardService.getAdminStats();
       if (res.success) {
         setStats(res.stats);
+        setLastUpdated(new Date());
+        if (isManual) {
+          setToast({ message: 'Dashboard updated with real-time data.', type: 'success' });
+        }
+      } else {
+        setError('Failed to fetch metric data from server.');
       }
     } catch (err) {
-      console.error('Failed to load admin stats:', err);
+      console.error('Error fetching admin dashboard stats:', err);
+      setError(err.response?.data?.message || 'Server connection error. Failed to load metrics.');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
   useEffect(() => {
     fetchAdminStats();
+
+    // 60-Second Auto-Refresh Polling Timer
+    const interval = setInterval(() => {
+      fetchAdminStats();
+    }, 60000);
+
+    return () => clearInterval(interval);
   }, []);
 
-  const handleQuickApprove = async (leaveId) => {
-    try {
-      const res = await leaveService.updateLeaveStatus(leaveId, {
-        status: 'Approved',
-        adminComment: 'Approved via Admin Dashboard quick action.'
-      });
-      if (res.success) {
-        setToast({ message: 'Leave request approved successfully!', type: 'success' });
-        fetchAdminStats();
-      }
-    } catch (err) {
-      setToast({ message: 'Failed to approve leave.', type: 'error' });
-    }
-  };
-
-  const handleQuickReject = async (leaveId) => {
-    try {
-      const res = await leaveService.updateLeaveStatus(leaveId, {
-        status: 'Rejected',
-        adminComment: 'Rejected via Admin Dashboard quick action.'
-      });
-      if (res.success) {
-        setToast({ message: 'Leave request rejected.', type: 'info' });
-        fetchAdminStats();
-      }
-    } catch (err) {
-      setToast({ message: 'Failed to reject leave.', type: 'error' });
-    }
-  };
-
-  if (loading) return <Loader message="Loading Admin Command Center..." />;
+  if (loading) return <Loader message="Connecting to Dayflow database & generating analytics..." />;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -84,7 +95,7 @@ const AdminDashboard = () => {
         alignItems: 'center',
         justifyContent: 'space-between',
         flexWrap: 'wrap',
-        gap: '1rem'
+        gap: '1.25rem'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <div style={{
@@ -101,123 +112,217 @@ const AdminDashboard = () => {
           </div>
           <div>
             <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-main)' }}>
-              HR Admin Command Center
+              HR Executive Command Center
             </h2>
             <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-              Real-time organization metrics, attendance tracking & payroll management.
+              Live auto-syncing metrics • Auto refreshes every 60 seconds (Last updated: {lastUpdated.toLocaleTimeString()})
             </p>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <button
+            onClick={() => fetchAdminStats(true)}
+            disabled={refreshing}
+            className="btn btn-outline"
+            style={{ gap: '0.4rem' }}
+            title="Manual Sync"
+          >
+            <RefreshCw size={16} className={refreshing ? 'spin-icon' : ''} />
+            <span>{refreshing ? 'Syncing...' : 'Refresh Data'}</span>
+          </button>
+
           <Link to="/employees" className="btn btn-primary" style={{ gap: '0.4rem' }}>
             <Users size={16} />
-            <span>Manage Employees</span>
-          </Link>
-          <Link to="/leaves" className="btn btn-outline" style={{ gap: '0.4rem' }}>
-            <CalendarDays size={16} />
-            <span>Review Leaves</span>
+            <span>Manage Workforce</span>
           </Link>
         </div>
       </div>
 
-      {/* Key Metrics Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
+      {/* Error Retry Banner */}
+      {error && (
+        <div style={{
+          backgroundColor: 'var(--danger-bg)',
+          color: 'var(--danger)',
+          border: '1px solid var(--danger)',
+          padding: '1rem 1.5rem',
+          borderRadius: '12px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
+          <span>⚠️ {error}</span>
+          <button onClick={() => fetchAdminStats(true)} className="btn btn-danger btn-sm">
+            Retry Connection
+          </button>
+        </div>
+      )}
+
+      {/* 6 Key Dynamic Metrics Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
         <StatCard
-          title="Total Workforce"
+          title="Total Employees"
           value={stats?.totalEmployees || 0}
-          subtext="Active employees"
+          subtext="Active staff profiles"
           icon={Users}
           color="#6366f1"
-          trend="+5%"
         />
         <StatCard
           title="Present Today"
           value={stats?.presentToday || 0}
-          subtext={`${stats?.absentToday || 0} employees absent`}
+          subtext="Verified shift clock-ins"
           icon={UserCheck}
           color="#10b981"
         />
         <StatCard
-          title="Pending Leave Review"
+          title="Absent Today"
+          value={stats?.absentToday || 0}
+          subtext="Unaccounted or absent"
+          icon={UserX}
+          color="#f43f5e"
+        />
+        <StatCard
+          title="Pending Leaves"
           value={stats?.pendingLeaves || 0}
-          subtext="Requires HR action"
+          subtext="Queue awaiting review"
           icon={CalendarDays}
           color="#f59e0b"
         />
         <StatCard
-          title="Monthly Payroll Outflow"
-          value={`$${(stats?.totalPayrollAmount || 0).toLocaleString()}`}
-          subtext={`${stats?.pendingPayrollCount || 0} slips pending payment`}
+          title="Approved Leaves"
+          value={stats?.approvedLeaves || 0}
+          subtext="Granted leave days"
+          icon={CheckCircle2}
+          color="#06b6d4"
+        />
+        <StatCard
+          title="Monthly Payroll"
+          value={`$${(stats?.monthlyPayrollTotal || 0).toLocaleString()}`}
+          subtext="Total net compensation"
           icon={CircleDollarSign}
           color="#8b5cf6"
         />
       </div>
 
-      {/* Recent Leave Requests Queue */}
+      {/* Analytics Charts Row */}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem' }} className="dash-charts-grid">
+        {/* Attendance 7-Day Trend Chart */}
+        <div className="glass-card" style={{ padding: '1.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <BarChart3 size={20} color="var(--primary)" />
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 700 }}>Attendance Trend Analytics (7 Days)</h3>
+            </div>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Daily Present vs Absent</span>
+          </div>
+
+          <div style={{ width: '100%', height: '300px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={stats?.attendanceAnalytics || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorPresent" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorAbsent" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.4}/>
+                    <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+                <XAxis dataKey="day" stroke="var(--text-muted)" fontSize={12} />
+                <YAxis stroke="var(--text-muted)" fontSize={12} allowDecimals={false} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-color)', borderRadius: '10px' }}
+                />
+                <Legend />
+                <Area type="monotone" dataKey="present" name="Present Staff" stroke="#10b981" fillOpacity={1} fill="url(#colorPresent)" strokeWidth={2} />
+                <Area type="monotone" dataKey="absent" name="Absent Staff" stroke="#f43f5e" fillOpacity={1} fill="url(#colorAbsent)" strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Leave Type Breakdown Pie Chart */}
+        <div className="glass-card" style={{ padding: '1.75rem', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
+            <PieIcon size={20} color="var(--secondary)" />
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 700 }}>Leave Category Share</h3>
+          </div>
+
+          <div style={{ width: '100%', height: '260px', flex: 1 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={stats?.leaveAnalytics || []}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={55}
+                  outerRadius={85}
+                  paddingAngle={5}
+                  dataKey="count"
+                >
+                  {(stats?.leaveAnalytics || []).map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-color)', borderRadius: '10px' }}
+                />
+                <Legend verticalAlign="bottom" height={36} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Activity Feed Table */}
       <div className="glass-card" style={{ padding: '1.75rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
-          <div>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Pending Leave Applications</h3>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Quick approve or reject pending employee leave requests</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Activity size={20} color="var(--primary)" />
+            <div>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 700 }}>Live Workforce Activity Feed</h3>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Real-time stream of employee check-ins & leave requests</p>
+            </div>
           </div>
           <Link to="/leaves" className="btn btn-outline btn-sm" style={{ gap: '0.35rem' }}>
-            <span>View All Queue</span>
+            <span>Review Applications</span>
             <ArrowUpRight size={14} />
           </Link>
         </div>
 
-        {(!stats?.recentLeaves || stats.recentLeaves.length === 0) ? (
-          <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-            🎉 No pending leave requests to review!
+        {(!stats?.recentActivities || stats.recentActivities.length === 0) ? (
+          <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+            No recent workforce activities recorded.
           </div>
         ) : (
           <div className="table-responsive">
             <table className="custom-table">
               <thead>
                 <tr>
-                  <th>Employee</th>
-                  <th>Leave Type</th>
-                  <th>Duration</th>
-                  <th>Reason</th>
+                  <th>Event Type</th>
+                  <th>Employee Name</th>
+                  <th>Details / Reason</th>
+                  <th>Timestamp</th>
                   <th>Status</th>
-                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {stats.recentLeaves.map((leave) => (
-                  <tr key={leave.id}>
+                {stats.recentActivities.map((act, idx) => (
+                  <tr key={idx}>
                     <td>
-                      <div style={{ fontWeight: 600 }}>{leave.first_name} {leave.last_name}</div>
+                      <span className={`badge ${act.activity_type === 'leave' ? 'badge-warning' : 'badge-info'}`}>
+                        {act.activity_type === 'leave' ? <CalendarDays size={13} /> : <Clock size={13} />}
+                        {act.activity_type.toUpperCase()}
+                      </span>
                     </td>
-                    <td>{leave.leave_type}</td>
-                    <td>{leave.start_date} to {leave.end_date}</td>
-                    <td style={{ maxWidth: '250px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                      {leave.reason}
+                    <td style={{ fontWeight: 600 }}>{act.first_name} {act.last_name}</td>
+                    <td style={{ fontSize: '0.875rem' }}>{act.detail || 'Clock-in log'}</td>
+                    <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                      {new Date(act.created_at).toLocaleString()}
                     </td>
-                    <td><StatusBadge status={leave.status} /></td>
-                    <td>
-                      {leave.status === 'Pending' ? (
-                        <div style={{ display: 'flex', gap: '0.4rem' }}>
-                          <button
-                            onClick={() => handleQuickApprove(leave.id)}
-                            className="btn btn-success btn-sm"
-                            title="Approve Leave"
-                          >
-                            <Check size={14} />
-                          </button>
-                          <button
-                            onClick={() => handleQuickReject(leave.id)}
-                            className="btn btn-danger btn-sm"
-                            title="Reject Leave"
-                          >
-                            <X size={14} />
-                          </button>
-                        </div>
-                      ) : (
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Processed</span>
-                      )}
-                    </td>
+                    <td><StatusBadge status={act.status} /></td>
                   </tr>
                 ))}
               </tbody>
@@ -225,6 +330,16 @@ const AdminDashboard = () => {
           </div>
         )}
       </div>
+
+      <style>{`
+        .spin-icon {
+          animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 };
