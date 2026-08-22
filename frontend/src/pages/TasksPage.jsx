@@ -9,7 +9,7 @@ import StatusBadge from '../components/StatusBadge';
 import { CheckSquare, Plus, Calendar, User, Clock, AlertTriangle } from 'lucide-react';
 
 const TasksPage = () => {
-  const { isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [tasks, setTasks] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,20 +27,36 @@ const TasksPage = () => {
 
   const fetchTasksData = async () => {
     try {
-      const [resT, resE] = await Promise.all([
-        taskService.getTasks(),
-        isAdmin ? employeeService.getAllEmployees() : Promise.resolve({ success: false })
-      ]);
-      if (resT?.success) setTasks(resT.tasks ?? []);
+      console.log("Logged User:", user);
+      console.log("ROLE PATH - isAdmin:", isAdmin, "user.role:", user?.role);
+
+      const taskPromise = isAdmin ? taskService.getTasks() : taskService.getMyTasks();
+      const empPromise = isAdmin ? employeeService.getAllEmployees() : Promise.resolve({ success: false });
+
+      const [resT, resE] = await Promise.all([taskPromise, empPromise]);
+
+      console.log("TASK API RESPONSE:", resT);
+
+      if (resT?.success) {
+        const taskList = resT.tasks ?? [];
+        console.log("Tasks Returned:", taskList);
+        console.log("Tasks Length:", taskList.length);
+        console.log("IsArray:", Array.isArray(taskList));
+        setTasks(taskList);
+      } else {
+        setTasks([]);
+      }
+
       if (resE?.success) {
         const emps = resE.employees ?? [];
         setEmployees(emps);
-        if (emps.length > 0 && !form.assignedTo) {
-          setForm(prev => ({ ...prev, assignedTo: emps[0].id }));
+        if (emps.length > 0) {
+          setForm(prev => ({ ...prev, assignedTo: prev.assignedTo || emps[0].id }));
         }
       }
     } catch (err) {
       console.error('Failed to load tasks:', err);
+      setTasks([]);
     } finally {
       setLoading(false);
     }
@@ -138,7 +154,7 @@ const TasksPage = () => {
               <thead>
                 <tr>
                   <th>Task Title</th>
-                  {isAdmin && <th>Assigned To</th>}
+                  <th>Assigned Employee</th>
                   <th>Priority</th>
                   <th>Due Date</th>
                   <th>Status</th>
@@ -152,14 +168,12 @@ const TasksPage = () => {
                       <div style={{ fontWeight: 700 }}>{t?.title}</div>
                       <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t?.description || 'No description'}</div>
                     </td>
-                    {isAdmin && (
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 600 }}>
-                          <User size={14} color="var(--primary)" />
-                          <span>{t?.first_name ? `${t.first_name} ${t.last_name || ''}` : `Employee #${t?.assigned_to}`}</span>
-                        </div>
-                      </td>
-                    )}
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 600 }}>
+                        <User size={14} color="var(--primary)" />
+                        <span>{t?.first_name ? `${t.first_name} ${t.last_name || ''}` : `Employee #${t?.assigned_to}`}</span>
+                      </div>
+                    </td>
                     <td>
                       <span className={`badge ${t?.priority === 'High' ? 'badge-danger' : t?.priority === 'Low' ? 'badge-info' : 'badge-warning'}`}>
                         {t?.priority ?? 'Medium'}
