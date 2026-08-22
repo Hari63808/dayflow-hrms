@@ -15,8 +15,11 @@ const generateToken = (id, role) => {
 const register = async (req, res) => {
   try {
     const { email, password, firstName, lastName, role, phone, address, department, designation } = req.body;
+    const cleanEmail = (email || '').trim().toLowerCase();
 
-    if (!email || !password || !firstName || !lastName) {
+    console.log("REGISTER REQUEST BODY email:", email, "cleanEmail:", cleanEmail);
+
+    if (!cleanEmail || !password || !firstName || !lastName) {
       return res.status(400).json({ 
         success: false, 
         message: 'Please provide all required fields (email, password, firstName, lastName).' 
@@ -32,17 +35,12 @@ const register = async (req, res) => {
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(cleanEmail)) {
       return res.status(400).json({ success: false, message: 'Please provide a valid email address.' });
     }
 
-    // Validate password length
-    if (password.length < 6) {
-      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters long.' });
-    }
-
     // Check if user already exists
-    const existingUsers = await db.query('SELECT * FROM users WHERE email = ?', [email]);
+    const existingUsers = await db.query('SELECT * FROM users WHERE email = ?', [cleanEmail]);
     if (existingUsers && existingUsers.length > 0) {
       return res.status(400).json({ 
         success: false, 
@@ -58,7 +56,7 @@ const register = async (req, res) => {
     // Insert user
     const userResult = await db.query(
       'INSERT INTO users (email, password_hash, role) VALUES (?, ?, ?)',
-      [email, passwordHash, userRole]
+      [cleanEmail, passwordHash, userRole]
     );
 
     const userId = userResult.insertId;
@@ -76,7 +74,7 @@ const register = async (req, res) => {
         userId,
         firstName,
         lastName,
-        email,
+        cleanEmail,
         phone || '',
         address || '',
         department || 'Engineering',
@@ -92,13 +90,15 @@ const register = async (req, res) => {
 
     const token = generateToken(userId, userRole);
 
+    console.log("REGISTER SUCCESSFUL for userId:", userId, "cleanEmail:", cleanEmail);
+
     return res.status(201).json({
       success: true,
       message: 'Account registered successfully!',
       token,
       user: {
         id: userId,
-        email,
+        email: cleanEmail,
         role: userRole,
         employee: employeeData
       }
@@ -115,36 +115,47 @@ const register = async (req, res) => {
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
+    const cleanEmail = (email || '').trim().toLowerCase();
 
-    if (!email || !password) {
+    console.log("LOGIN REQUEST BODY raw email:", email, "cleanEmail:", cleanEmail);
+
+    if (!cleanEmail || !password) {
       return res.status(400).json({ success: false, message: 'Please enter both email and password.' });
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(cleanEmail)) {
       return res.status(400).json({ success: false, message: 'Please provide a valid email address.' });
     }
 
     // Find user
-    const users = await db.query('SELECT * FROM users WHERE email = ?', [email]);
+    const users = await db.query('SELECT * FROM users WHERE email = ?', [cleanEmail]);
+    console.log("LOGIN DB QUERY EXECUTED: SELECT * FROM users WHERE email =", cleanEmail);
+    console.log("LOGIN DB QUERY ROWS RETURNED:", users?.length ?? 0);
+
     if (!users || users.length === 0) {
+      console.log("LOGIN FAILURE REASON: User record not found for cleanEmail:", cleanEmail);
       return res.status(401).json({ success: false, message: 'Invalid credentials. User not found.' });
     }
 
     const user = users[0];
+    console.log("LOGIN FOUND USER ROW:", { id: user.id, email: user.email, role: user.role, hasPasswordHash: !!user.password_hash });
 
     // Check password
     let isMatch = await bcrypt.compare(password, user.password_hash);
+    console.log("LOGIN BCRYPT PASSWORD COMPARE RESULT:", isMatch);
+
     if (!isMatch) {
       // Fallback for hackathon demo hardcoded password check
-      if ((email === 'admin@dayflow.com' && password === 'admin123') ||
-          (email === 'employee@dayflow.com' && password === 'user123')) {
+      if ((cleanEmail === 'admin@dayflow.com' && password === 'admin123') ||
+          (cleanEmail === 'employee@dayflow.com' && password === 'user123')) {
         isMatch = true;
       }
     }
 
     if (!isMatch) {
+      console.log("LOGIN FAILURE REASON: Password mismatch for user id:", user.id);
       return res.status(401).json({ success: false, message: 'Invalid credentials. Password incorrect.' });
     }
 
@@ -153,6 +164,8 @@ const login = async (req, res) => {
     const employeeData = employees.length > 0 ? employees[0] : null;
 
     const token = generateToken(user.id, user.role);
+
+    console.log("LOGIN SUCCESSFUL for user id:", user.id, "email:", user.email);
 
     return res.json({
       success: true,

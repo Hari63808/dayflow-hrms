@@ -1,0 +1,284 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "email": "admin@dayflow.com",
+      "password_hash": "$2a$10$CwTycUXWue0Thq9StjUM0uJ81/Q1QxGk5jK67Y9w1Z.c9h8.a7G9G",
+      "role": "admin",
+      "created_at": "2026-08-22T08:17:13.860Z"
+    },
+    {
+      "id": 2,
+      "email": "employee@dayflow.com",
+      "password_hash": "$2a$10$CwTycUXWue0Thq9StjUM0uJ81/Q1QxGk5jK67Y9w1Z.c9h8.a7G9G",
+      "role": "employee",
+      "created_at": "2026-08-22T08:17:13.860Z"
+    },
+    {
+      "id": 3,
+      "email": "sarah.connor@dayflow.com",
+      "password_hash": "$2a$10$CwTycUXWue0Thq9StjUM0uJ81/Q1QxGk5jK67Y9w1Z.c9h8.a7G9G",
+      "role": "employee",
+      "created_at": "2026-08-22T08:17:13.860Z"
+    },
+    {
+      "id": 4,
+      "email": "michael.scott@dayflow.com",
+      "password_hash": "$2a$10$CwTycUXWue0Thq9StjUM0uJ81/Q1QxGk5jK67Y9w1Z.c9h8.a7G9G",
+      "role": "employee",
+      "created_at": "2026-08-22T08:17:13.860Z"
+    },
+    {
+      "id": 5,
+      "email": "newuser2026@dayflow.com",
+      "password_hash": "$2a$10$IMRIGKmK8ejC4CDmWCKct.10oZfnLfkBQvFmNV7jYnDyYYZmP4dNu",
+      "role": "employee",
+      "created_at": "2026-08-22T08:17:14.021Z"
+    }
+  ],
+  "departments": [
+    {
+      "id": 1,
+      "name": "Engineering",
+      "code": "ENG",
+      "head_employee_id": 2,
+      "description": "Software engineering & cloud architecture"
+    },
+    {
+      "id": 2,
+      "name": "Human Resources",
+      "code": "HR",
+      "head_employee_id": 1,
+      "description": "People operations & recruitment"
+    },
+    {
+      "id": 3,
+      "name": "Design",
+      "code": "DES",
+      "head_employee_id": 3,
+      "description": "Product UX & UI design"
+    },
+    {
+      "id": 4,
+      "name": "Sales & Marketing",
+      "code": "SALES",
+      "head_employee_id": 4,
+      "description": "Revenue operations & marketing"
+    }
+  ],
+  "employees": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "first_name": "Dayflow",
+      "last_name": "Admin",
+      "email": "admin@dayflow.com",
+      "phone": "+1 (555) 019-2834",
+      "address": "100 Enterprise Way, Suite 400",
+      "department": "Human Resources",
+      "designation": "HR Director",
+      "joining_date": "2024-01-15",
+      "avatar_url": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"
+    },
+    {
+      "id": 2,
+      "user_id": 2,
+      "first_name": "Alex",
+      "last_name": "Morgan",
+      "email": "employee@dayflow.com",
+      "phone": "+1 (555) 012-3456",
+      "address": "742 Evergreen Terrace, Springfield",
+      "department": "Engineering",
+      "designation": "Senior Frontend Developer",
+      "joining_date": "2024-03-01",
+      "avatar_url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150"
+    },
+    {
+      "id": 3,
+      "user_id": 3,
+      "first_name": "Sarah",
+      "last_name": "Connor",
+      "email": "sarah.connor@dayflow.com",
+      "phone": "+1 (555) 987-6543",
+      "address": "120 West 42nd Street, New York, NY",
+      "department": "Design",
+      "designation": "UI/UX Product Designer",
+      "joining_date": "2024-05-10",
+      "avatar_url": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150"
+    },
+    {
+      "id": 4,
+      "user_id": 4,
+      "first_name": "Michael",
+      "last_name": "Scott",
+      "email": "michael.scott@dayflow.com",
+      "phone": "+1 (555) 321-7654",
+      "address": "1725 Slough Avenue, Scranton, PA",
+      "department": "Sales & Marketing",
+      "designation": "Regional Sales Manager",
+      "joining_date": "2024-02-20",
+      "avatar_url": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150"
+    },
+    {
+      "id": 5,
+      "user_id": 5,
+      "first_name": "New",
+      "last_name": "User",
+      "email": "newuser2026@dayflow.com",
+      "phone": "",
+      "address": "",
+      "department": "Engineering",
+      "designation": "Team Member",
+      "joining_date": "2026-08-22",
+      "avatar_url": "https://api.dicebear.com/7.x/avataaars/svg?seed=New%20User"
+    }
+  ],
+  "attendance": [
+    {
+      "id": 1,
+      "employee_id": 2,
+      "date": "2026-08-22",
+      "check_in": "2026-08-22 08:17:13",
+      "check_out": null,
+      "status": "Present",
+      "notes": "Checked in via web portal"
+    },
+    {
+      "id": 2,
+      "employee_id": 3,
+      "date": "2026-08-22",
+      "check_in": "2026-08-22 08:17:13",
+      "check_out": "2026-08-22 08:17:13",
+      "status": "Present",
+      "notes": "Completed shift"
+    },
+    {
+      "id": 3,
+      "employee_id": 4,
+      "date": "2026-08-22",
+      "check_in": null,
+      "check_out": null,
+      "status": "Absent",
+      "notes": "Uninformed absence"
+    }
+  ],
+  "leave_requests": [
+    {
+      "id": 1,
+      "employee_id": 2,
+      "leave_type": "Sick",
+      "start_date": "2026-08-25",
+      "end_date": "2026-08-26",
+      "reason": "Feeling unwell, scheduled medical checkup.",
+      "status": "Pending",
+      "admin_comment": null,
+      "created_at": "2026-08-22T08:17:13.861Z"
+    },
+    {
+      "id": 2,
+      "employee_id": 3,
+      "leave_type": "Casual",
+      "start_date": "2026-09-01",
+      "end_date": "2026-09-03",
+      "reason": "Family event out of town.",
+      "status": "Approved",
+      "admin_comment": "Approved! Have a nice break.",
+      "created_at": "2026-08-22T08:17:13.861Z"
+    },
+    {
+      "id": 3,
+      "employee_id": 4,
+      "leave_type": "Paid",
+      "start_date": "2026-08-15",
+      "end_date": "2026-08-16",
+      "reason": "Personal errands.",
+      "status": "Rejected",
+      "admin_comment": "High priority project release scheduled.",
+      "created_at": "2026-08-22T08:17:13.861Z"
+    }
+  ],
+  "payroll": [
+    {
+      "id": 1,
+      "employee_id": 2,
+      "month": "2026-08",
+      "basic_salary": 7500,
+      "bonus": 500,
+      "deductions": 350,
+      "net_salary": 7650,
+      "payment_date": "2026-08-01",
+      "status": "Paid"
+    },
+    {
+      "id": 2,
+      "employee_id": 3,
+      "month": "2026-08",
+      "basic_salary": 6800,
+      "bonus": 400,
+      "deductions": 300,
+      "net_salary": 6900,
+      "payment_date": "2026-08-01",
+      "status": "Paid"
+    },
+    {
+      "id": 3,
+      "employee_id": 4,
+      "month": "2026-08",
+      "basic_salary": 8200,
+      "bonus": 750,
+      "deductions": 450,
+      "net_salary": 8500,
+      "payment_date": null,
+      "status": "Pending"
+    }
+  ],
+  "promotions_transfers": [],
+  "attendance_corrections": [],
+  "holidays": [
+    {
+      "id": 1,
+      "title": "New Year Day",
+      "date": "2026-01-01",
+      "type": "Public",
+      "description": "Global holiday"
+    }
+  ],
+  "announcements": [
+    {
+      "id": 1,
+      "title": "Q3 All-Hands Townhall Meeting",
+      "content": "Join us on Friday at 3 PM EST for company updates & roadmap reveals.",
+      "priority": "High",
+      "target_department": "All",
+      "author_name": "Dayflow Admin",
+      "created_at": "2026-08-22T08:17:13.861Z"
+    }
+  ],
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Complete Phase 4 HRMS Upgrade",
+      "description": "Implement RBAC, tasks, and document vault.",
+      "assigned_to": 2,
+      "assigned_by": 1,
+      "due_date": "2026-08-25",
+      "priority": "High",
+      "status": "In Progress",
+      "created_at": "2026-08-22T08:17:13.861Z"
+    }
+  ],
+  "performance_reviews": [],
+  "documents": [],
+  "notifications": [
+    {
+      "id": 1,
+      "user_id": 2,
+      "title": "Welcome to Dayflow HRMS",
+      "message": "Your employee profile is active. Check in for your shift today.",
+      "type": "info",
+      "read_status": false,
+      "created_at": "2026-08-22T08:17:13.861Z"
+    }
+  ],
+  "audit_logs": []
+}

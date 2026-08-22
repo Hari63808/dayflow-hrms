@@ -1,10 +1,14 @@
 const mysql = require('mysql2/promise');
 const dotenv = require('dotenv');
+const fs = require('fs');
+const path = require('path');
 
 dotenv.config();
 
 let pool = null;
 let isMockMode = false;
+
+const storeFilePath = path.join(__dirname, '../scratch/mock_store.json');
 
 // Stateful store initialization for database fallback
 const mockStore = {
@@ -49,272 +53,269 @@ const mockStore = {
   announcements: [
     { id: 1, title: 'Q3 All-Hands Townhall Meeting', content: 'Join us on Friday at 3 PM EST for company updates & roadmap reveals.', priority: 'High', target_department: 'All', author_name: 'Dayflow Admin', created_at: new Date() }
   ],
-  notifications: [
-    { id: 1, user_id: 2, title: 'Shift Clocked In', message: 'You clocked in successfully at 09:02 AM.', type: 'success', is_read: false, created_at: new Date() }
-  ],
   tasks: [
     { id: 1, title: 'Complete Phase 4 HRMS Upgrade', description: 'Implement RBAC, tasks, and document vault.', assigned_to: 2, assigned_by: 1, due_date: '2026-08-25', priority: 'High', status: 'In Progress', created_at: new Date() }
   ],
   performance_reviews: [],
   documents: [],
-  audit_logs: [
-    { id: 1, user_email: 'admin@dayflow.com', action: 'USER_LOGIN', details: 'HR Admin logged in', ip_address: '127.0.0.1', created_at: new Date() }
-  ]
+  notifications: [
+    { id: 1, user_id: 2, title: 'Welcome to Dayflow HRMS', message: 'Your employee profile is active. Check in for your shift today.', type: 'info', read_status: false, created_at: new Date() }
+  ],
+  audit_logs: []
 };
 
-const initializeDatabase = async () => {
+function saveMockStore() {
   try {
-    pool = mysql.createPool({
-      host: process.env.DB_HOST || 'localhost',
-      port: process.env.DB_PORT || 3306,
-      user: process.env.DB_USER || 'root',
-      password: process.env.DB_PASSWORD || '',
-      database: process.env.DB_NAME || 'dayflow_hrms',
-      waitForConnections: true,
-      connectionLimit: 10,
-      queueLimit: 0
-    });
-
-    const connection = await pool.getConnection();
-    console.log('✅ Connected successfully to MySQL Database!');
-    connection.release();
+    const dir = path.dirname(storeFilePath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(storeFilePath, JSON.stringify(mockStore, null, 2));
   } catch (err) {
-    console.warn('⚠️  MySQL Database connection failed:', err.message);
+    console.warn('Failed to persist mockStore to file:', err.message);
+  }
+}
+
+function loadMockStore() {
+  try {
+    if (fs.existsSync(storeFilePath)) {
+      const data = JSON.parse(fs.readFileSync(storeFilePath, 'utf8'));
+      if (data.users && Array.isArray(data.users)) mockStore.users = data.users;
+      if (data.employees && Array.isArray(data.employees)) mockStore.employees = data.employees;
+      if (data.attendance && Array.isArray(data.attendance)) mockStore.attendance = data.attendance;
+      if (data.leave_requests && Array.isArray(data.leave_requests)) mockStore.leave_requests = data.leave_requests;
+      if (data.payroll && Array.isArray(data.payroll)) mockStore.payroll = data.payroll;
+      if (data.tasks && Array.isArray(data.tasks)) mockStore.tasks = data.tasks;
+      if (data.departments && Array.isArray(data.departments)) mockStore.departments = data.departments;
+    }
+  } catch (err) {
+    console.warn('Failed to load mockStore from file:', err.message);
+  }
+}
+
+loadMockStore();
+
+const initializeDatabase = async () => {
+  const dbConfig = {
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'dayflow_hrms',
+    port: parseInt(process.env.DB_PORT || '3306', 10),
+    connectTimeout: 3000
+  };
+
+  try {
+    pool = mysql.createPool(dbConfig);
+    const connection = await pool.getConnection();
+    console.log('✅ Connected to MySQL Database:', process.env.DB_NAME || 'dayflow_hrms');
+    connection.release();
+    isMockMode = false;
+  } catch (error) {
+    console.warn('⚠️  MySQL Database connection failed:', error.message);
     console.warn('🔄 Falling back to zero-config stateful Mock DB store mode for smooth runtime.');
     isMockMode = true;
+    pool = null;
   }
 };
 
 initializeDatabase();
 
-const query = async (sql, params = []) => {
-  if (!isMockMode && pool) {
-    try {
-      const [rows] = await pool.execute(sql, params);
-      return rows;
-    } catch (error) {
-      console.warn('⚠️ MySQL Query error, falling back to mock store mode:', error.message);
-      isMockMode = true;
-    }
-  }
-  return executeMockQuery(sql, params);
-};
-
-const executeMockQuery = (sql, params) => {
+const executeMockQuery = (sql, params = []) => {
   const cleanSql = sql.trim().replace(/\s+/g, ' ');
   const upperSql = cleanSql.toUpperCase();
 
-  // Helper count matching
-  if (upperSql.includes('SELECT COUNT(*) AS COUNT FROM EMPLOYEES')) {
-    return [{ count: mockStore.employees.length }];
-  }
-
-  // --- TASKS MODULE (Check before employees join checks) ---
+  // --- TASKS MODULE ---
   if (upperSql.includes('INSERT INTO TASKS')) {
     const newId = mockStore.tasks.length + 1;
-    const newT = {
+    const newTask = {
       id: newId,
       title: params[0],
       description: params[1] || '',
       assigned_to: Number(params[2]),
-      assigned_by: Number(params[3] || 1),
+      assigned_by: Number(params[3]),
       due_date: params[4],
       priority: params[5] || 'Medium',
       status: 'Pending',
       created_at: new Date()
     };
-    mockStore.tasks.push(newT);
+    mockStore.tasks.push(newTask);
+    saveMockStore();
     return { insertId: newId };
   }
   if (upperSql.includes('UPDATE TASKS SET STATUS')) {
     const status = params[0];
     const id = Number(params[1]);
-    const t = mockStore.tasks.find(task => task.id === id);
-    if (t) {
-      t.status = status;
-    }
+    const task = mockStore.tasks.find(t => t.id === id);
+    if (task) task.status = status;
+    saveMockStore();
     return { affectedRows: 1 };
   }
-  if (upperSql.includes('TASKS') && (upperSql.includes('FROM TASKS') || upperSql.includes('FROM TASKS T'))) {
+  if (upperSql.includes('FROM TASKS')) {
     if (upperSql.includes('WHERE ID = ?')) {
-      const t = mockStore.tasks.find(task => task.id === Number(params[0]));
-      if (t) {
-        const emp = mockStore.employees.find(e => e.id === t.assigned_to);
-        return [{ ...t, first_name: emp?.first_name ?? 'Employee', last_name: emp?.last_name ?? '' }];
+      const task = mockStore.tasks.find(t => t.id === Number(params[0]));
+      if (task) {
+        const emp = mockStore.employees.find(e => e.id === task.assigned_to);
+        return [{ ...task, first_name: emp?.first_name || '', last_name: emp?.last_name || '' }];
       }
       return [];
     }
     if (upperSql.includes('WHERE ASSIGNED_TO = ?')) {
-      const empId = Number(params[0]);
-      return mockStore.tasks
-        .filter(t => t.assigned_to === empId)
-        .map(t => {
-          const emp = mockStore.employees.find(e => e.id === t.assigned_to);
-          return { ...t, first_name: emp?.first_name ?? 'Employee', last_name: emp?.last_name ?? '' };
-        });
+      const targetId = Number(params[0]);
+      const matchedTasks = mockStore.tasks.filter(t => t.assigned_to === targetId);
+      return matchedTasks.map(t => {
+        const emp = mockStore.employees.find(e => e.id === t.assigned_to);
+        return { ...t, first_name: emp?.first_name || '', last_name: emp?.last_name || '' };
+      });
     }
     return mockStore.tasks.map(t => {
       const emp = mockStore.employees.find(e => e.id === t.assigned_to);
-      return { ...t, first_name: emp?.first_name ?? 'Employee', last_name: emp?.last_name ?? '' };
+      return { ...t, first_name: emp?.first_name || '', last_name: emp?.last_name || '' };
     });
   }
 
-  // --- LEAVE_REQUESTS MODULE ---
+  // --- LEAVES MODULE ---
   if (upperSql.includes('INSERT INTO LEAVE_REQUESTS')) {
     const newId = mockStore.leave_requests.length + 1;
-    const newL = {
+    const newReq = {
       id: newId,
       employee_id: Number(params[0]),
       leave_type: params[1],
       start_date: params[2],
       end_date: params[3],
-      reason: params[4],
+      reason: params[4] || '',
       status: 'Pending',
       admin_comment: null,
       created_at: new Date()
     };
-    mockStore.leave_requests.push(newL);
+    mockStore.leave_requests.push(newReq);
+    saveMockStore();
     return { insertId: newId };
   }
   if (upperSql.includes('UPDATE LEAVE_REQUESTS SET STATUS')) {
     const status = params[0];
-    const comment = params[1];
+    const comment = params[1] || null;
     const id = Number(params[2]);
-    const leave = mockStore.leave_requests.find(l => l.id === id);
-    if (leave) {
-      leave.status = status;
-      leave.admin_comment = comment;
+    const req = mockStore.leave_requests.find(r => r.id === id);
+    if (req) {
+      req.status = status;
+      req.admin_comment = comment;
     }
+    saveMockStore();
     return { affectedRows: 1 };
   }
-  if (upperSql.includes('LEAVE_REQUESTS') && (upperSql.includes('FROM LEAVE_REQUESTS') || upperSql.includes('FROM LEAVE_REQUESTS L'))) {
-    if (upperSql.includes('WHERE ID = ?')) {
-      const leave = mockStore.leave_requests.find(l => l.id === Number(params[0]));
-      if (leave) {
-        const emp = mockStore.employees.find(e => e.id === leave.employee_id);
-        return [{ ...leave, first_name: emp?.first_name, last_name: emp?.last_name, email: emp?.email, department: emp?.department, designation: emp?.designation }];
-      }
-      return [];
-    }
+  if (upperSql.includes('FROM LEAVE_REQUESTS')) {
     if (upperSql.includes('WHERE EMPLOYEE_ID = ?')) {
-      return mockStore.leave_requests.filter(l => l.employee_id === Number(params[0]));
+      const empId = Number(params[0]);
+      const reqs = mockStore.leave_requests.filter(l => l.employee_id === empId);
+      return reqs.map(l => {
+        const emp = mockStore.employees.find(e => e.id === l.employee_id);
+        return { ...l, first_name: emp?.first_name || '', last_name: emp?.last_name || '', department: emp?.department || '' };
+      });
     }
     return mockStore.leave_requests.map(l => {
       const emp = mockStore.employees.find(e => e.id === l.employee_id);
-      return { ...l, first_name: emp?.first_name ?? 'Employee', last_name: emp?.last_name ?? '', email: emp?.email ?? '', department: emp?.department ?? '', designation: emp?.designation ?? '' };
+      return { ...l, first_name: emp?.first_name || '', last_name: emp?.last_name || '', department: emp?.department || '' };
     });
   }
 
   // --- ATTENDANCE MODULE ---
   if (upperSql.includes('INSERT INTO ATTENDANCE')) {
     const newId = mockStore.attendance.length + 1;
-    const newA = {
+    const newAtt = {
       id: newId,
       employee_id: Number(params[0]),
       date: params[1],
       check_in: params[2],
       check_out: null,
       status: 'Present',
-      notes: params[3] || 'Checked in'
+      notes: params[3] || 'Checked in via web portal'
     };
-    mockStore.attendance.push(newA);
+    mockStore.attendance.push(newAtt);
+    saveMockStore();
     return { insertId: newId };
   }
   if (upperSql.includes('UPDATE ATTENDANCE SET CHECK_OUT')) {
     const checkOut = params[0];
     const id = Number(params[1]);
-    const rec = mockStore.attendance.find(a => a.id === id);
-    if (rec) {
-      rec.check_out = checkOut;
-    }
+    const att = mockStore.attendance.find(a => a.id === id);
+    if (att) att.check_out = checkOut;
+    saveMockStore();
     return { affectedRows: 1 };
   }
-  if (upperSql.includes('ATTENDANCE') && (upperSql.includes('FROM ATTENDANCE') || upperSql.includes('FROM ATTENDANCE A'))) {
+  if (upperSql.includes('FROM ATTENDANCE')) {
     if (upperSql.includes('WHERE EMPLOYEE_ID = ? AND DATE = ?')) {
-      const rec = mockStore.attendance.find(a => a.employee_id === Number(params[0]) && a.date === params[1]);
-      return rec ? [rec] : [];
+      const empId = Number(params[0]);
+      const date = params[1];
+      const found = mockStore.attendance.filter(a => a.employee_id === empId && a.date === date);
+      return found;
     }
     if (upperSql.includes('WHERE EMPLOYEE_ID = ?')) {
-      return mockStore.attendance.filter(a => a.employee_id === Number(params[0]));
+      const empId = Number(params[0]);
+      return mockStore.attendance.filter(a => a.employee_id === empId);
     }
     if (upperSql.includes('WHERE DATE = ?')) {
-      return mockStore.attendance.filter(a => a.date === params[0]);
+      const date = params[0];
+      return mockStore.attendance.filter(a => a.date === date);
     }
-    return mockStore.attendance.map(a => {
-      const emp = mockStore.employees.find(e => e.id === a.employee_id);
-      return { ...a, first_name: emp?.first_name ?? 'Employee', last_name: emp?.last_name ?? '', department: emp?.department ?? '' };
-    });
+    return mockStore.attendance;
   }
 
   // --- PAYROLL MODULE ---
   if (upperSql.includes('INSERT INTO PAYROLL')) {
     const newId = mockStore.payroll.length + 1;
-    const basic = parseFloat(params[2] || 0);
-    const bonus = parseFloat(params[3] || 0);
-    const ded = parseFloat(params[4] || 0);
-    const newP = {
+    const newPay = {
       id: newId,
       employee_id: Number(params[0]),
       month: params[1],
-      basic_salary: basic,
-      bonus: bonus,
-      deductions: ded,
-      net_salary: basic + bonus - ded,
-      payment_date: params[5] || null,
-      status: params[6] || 'Paid'
+      basic_salary: parseFloat(params[2]) || 0,
+      bonus: parseFloat(params[3]) || 0,
+      deductions: parseFloat(params[4]) || 0,
+      net_salary: parseFloat(params[5]) || 0,
+      payment_date: params[6] || new Date().toISOString().split('T')[0],
+      status: params[7] || 'Paid'
     };
-    mockStore.payroll.push(newP);
+    mockStore.payroll.push(newPay);
+    saveMockStore();
     return { insertId: newId };
   }
-  if (upperSql.includes('UPDATE PAYROLL SET')) {
-    const id = Number(params[params.length - 1]);
-    const p = mockStore.payroll.find(item => item.id === id);
-    if (p) {
-      p.basic_salary = parseFloat(params[0] || 0);
-      p.bonus = parseFloat(params[1] || 0);
-      p.deductions = parseFloat(params[2] || 0);
-      p.net_salary = p.basic_salary + p.bonus - p.deductions;
-      p.status = params[3] || 'Paid';
-      p.payment_date = params[4] || null;
-    }
-    return { affectedRows: 1 };
-  }
-  if (upperSql.includes('DELETE FROM PAYROLL WHERE ID')) {
-    const id = Number(params[0]);
-    mockStore.payroll = mockStore.payroll.filter(p => p.id !== id);
-    return { affectedRows: 1 };
-  }
-  if (upperSql.includes('PAYROLL') && upperSql.includes('FROM PAYROLL')) {
+  if (upperSql.includes('FROM PAYROLL')) {
     if (upperSql.includes('WHERE EMPLOYEE_ID = ?')) {
-      return mockStore.payroll.filter(p => p.employee_id === Number(params[0]));
+      const empId = Number(params[0]);
+      const pays = mockStore.payroll.filter(p => p.employee_id === empId);
+      return pays.map(p => {
+        const emp = mockStore.employees.find(e => e.id === p.employee_id);
+        return { ...p, first_name: emp?.first_name || '', last_name: emp?.last_name || '', designation: emp?.designation || '', department: emp?.department || '' };
+      });
     }
     return mockStore.payroll.map(p => {
       const emp = mockStore.employees.find(e => e.id === p.employee_id);
-      return { ...p, first_name: emp?.first_name ?? 'Employee', last_name: emp?.last_name ?? '', department: emp?.department ?? '' };
+      return { ...p, first_name: emp?.first_name || '', last_name: emp?.last_name || '', designation: emp?.designation || '', department: emp?.department || '' };
     });
   }
 
   // --- DEPARTMENTS MODULE ---
   if (upperSql.includes('INSERT INTO DEPARTMENTS')) {
     const newId = mockStore.departments.length + 1;
-    const newDept = { id: newId, name: params[0], code: params[1], description: params[2] || '', head_employee_id: params[3] || null };
+    const newDept = { id: newId, name: params[0], code: params[1] || params[0].substring(0, 3).toUpperCase(), description: params[2] || '', head_employee_id: params[3] || null };
     mockStore.departments.push(newDept);
+    saveMockStore();
     return { insertId: newId };
   }
-  if (upperSql.includes('UPDATE DEPARTMENTS SET') && upperSql.includes('WHERE ID')) {
+  if (upperSql.includes('UPDATE DEPARTMENTS SET')) {
     const id = Number(params[params.length - 1]);
     const dept = mockStore.departments.find(d => d.id === id);
     if (dept) {
       dept.name = params[0];
-      dept.code = params[1];
+      dept.code = params[1] || dept.code;
       dept.description = params[2] || '';
       dept.head_employee_id = params[3] || null;
     }
+    saveMockStore();
     return { affectedRows: 1 };
   }
   if (upperSql.includes('DELETE FROM DEPARTMENTS WHERE ID')) {
     const id = Number(params[0]);
     mockStore.departments = mockStore.departments.filter(d => d.id !== id);
+    saveMockStore();
     return { affectedRows: 1 };
   }
   if (upperSql.includes('DEPARTMENTS') && upperSql.includes('FROM DEPARTMENTS')) {
@@ -328,7 +329,8 @@ const executeMockQuery = (sql, params) => {
   // --- USERS MODULE ---
   if (upperSql.includes('USERS') && upperSql.includes('FROM USERS')) {
     if (upperSql.includes('WHERE EMAIL')) {
-      const user = mockStore.users.find(u => u.email.toLowerCase() === (params[0] || '').toLowerCase());
+      const searchEmail = (params[0] || '').toString().trim().toLowerCase();
+      const user = mockStore.users.find(u => (u.email || '').toLowerCase().trim() === searchEmail);
       return user ? [user] : [];
     }
     if (upperSql.includes('WHERE ID')) {
@@ -339,20 +341,23 @@ const executeMockQuery = (sql, params) => {
   }
   if (upperSql.includes('INSERT INTO USERS')) {
     const newId = mockStore.users.length + 1;
-    const newUser = { id: newId, email: params[0], password_hash: params[1], role: params[2] || 'employee', created_at: new Date() };
+    const cleanEmail = (params[0] || '').toString().trim().toLowerCase();
+    const newUser = { id: newId, email: cleanEmail, password_hash: params[1], role: params[2] || 'employee', created_at: new Date() };
     mockStore.users.push(newUser);
+    saveMockStore();
     return { insertId: newId };
   }
 
   // --- EMPLOYEES MODULE ---
   if (upperSql.includes('INSERT INTO EMPLOYEES')) {
     const newId = mockStore.employees.length + 1;
+    const cleanEmail = (params[3] || '').toString().trim().toLowerCase();
     const newEmp = {
       id: newId,
       user_id: params[0],
       first_name: params[1],
       last_name: params[2],
-      email: params[3],
+      email: cleanEmail,
       phone: params[4] || '',
       address: params[5] || '',
       department: params[6] || 'Engineering',
@@ -361,6 +366,7 @@ const executeMockQuery = (sql, params) => {
       avatar_url: params[9] || `https://api.dicebear.com/7.x/avataaars/svg?seed=${params[1]}`
     };
     mockStore.employees.push(newEmp);
+    saveMockStore();
     return { insertId: newId };
   }
   if (upperSql.includes('UPDATE EMPLOYEES SET')) {
@@ -382,6 +388,7 @@ const executeMockQuery = (sql, params) => {
         emp.designation = params[5];
       }
     }
+    saveMockStore();
     return { affectedRows: 1 };
   }
   if (upperSql.includes('DELETE FROM EMPLOYEES WHERE ID')) {
@@ -391,6 +398,7 @@ const executeMockQuery = (sql, params) => {
       mockStore.employees = mockStore.employees.filter(e => e.id !== id);
       mockStore.users = mockStore.users.filter(u => u.id !== emp.user_id);
     }
+    saveMockStore();
     return { affectedRows: 1 };
   }
   if (upperSql.includes('EMPLOYEES') && upperSql.includes('FROM EMPLOYEES')) {
@@ -400,6 +408,11 @@ const executeMockQuery = (sql, params) => {
     }
     if (upperSql.includes('WHERE ID = ?')) {
       const emp = mockStore.employees.find(e => e.id === Number(params[0]));
+      return emp ? [emp] : [];
+    }
+    if (upperSql.includes('WHERE LOWER(EMAIL) = LOWER(?)') || upperSql.includes('WHERE EMAIL = ?')) {
+      const searchEmail = (params[0] || '').toString().trim().toLowerCase();
+      const emp = mockStore.employees.find(e => (e.email || '').toLowerCase().trim() === searchEmail);
       return emp ? [emp] : [];
     }
     return mockStore.employees;
@@ -415,6 +428,19 @@ const executeMockQuery = (sql, params) => {
   if (upperSql.includes('FROM ATTENDANCE_CORRECTIONS')) return mockStore.attendance_corrections;
 
   return [];
+};
+
+const query = async (sql, params = []) => {
+  if (!isMockMode && pool) {
+    try {
+      const [rows] = await pool.execute(sql, params);
+      return rows;
+    } catch (error) {
+      console.warn('⚠️ MySQL Query error, falling back to mock store mode:', error.message);
+      isMockMode = true;
+    }
+  }
+  return executeMockQuery(sql, params);
 };
 
 module.exports = {
