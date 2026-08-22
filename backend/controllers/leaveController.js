@@ -18,6 +18,10 @@ const applyLeave = async (req, res) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
 
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return res.status(400).json({ success: false, message: 'Invalid date format provided.' });
+    }
+
     if (end < start) {
       return res.status(400).json({ success: false, message: 'End date cannot be prior to start date.' });
     }

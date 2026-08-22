@@ -20,6 +20,17 @@ const register = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please provide all required fields (email, password, firstName, lastName).' });
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ success: false, message: 'Please provide a valid email address.' });
+    }
+
+    // Validate password length
+    if (password.length < 6) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters long.' });
+    }
+
     // Check if user already exists
     const existingUsers = await db.query('SELECT * FROM users WHERE email = ?', [email]);
     if (existingUsers && existingUsers.length > 0) {
@@ -94,6 +105,12 @@ const login = async (req, res) => {
 
     if (!email || !password) {
       return res.status(400).json({ success: false, message: 'Please enter both email and password.' });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ success: false, message: 'Please provide a valid email address.' });
     }
 
     // Find user
