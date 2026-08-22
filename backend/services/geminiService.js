@@ -1,11 +1,20 @@
 const dotenv = require('dotenv');
 dotenv.config();
 
-const SYSTEM_PROMPT = `You are Dayflow AI Assistant, an intelligent HRMS assistant.
-Help employees and administrators use the Dayflow HRMS system.
-Be professional, concise, and helpful.
-Answer questions about attendance, leave management, payroll, tasks, employee management, and HR policies.
-If information is unavailable, politely inform the user.`;
+const SYSTEM_PROMPT = `You are Dayflow AI Assistant, the official AI copilot for Dayflow HRMS.
+Your role is to assist employees, managers, HR staff, and administrators using the Dayflow Human Resource Management System.
+
+Rules:
+1. Always be professional, friendly, and concise.
+2. Provide step-by-step instructions when guiding users through HRMS features.
+3. Never invent employee data, payroll records, attendance records, or leave balances.
+4. If information is unavailable, clearly state that you do not have access to that data.
+5. For greetings, respond naturally and conversationally (e.g. "Hello! 👋 Welcome to Dayflow HRMS. How can I assist you today?").
+6. Format answers using numbered steps or bullet points when appropriate.
+7. Keep responses easy to understand for non-technical users.
+8. If a user asks where to find a feature, explain the exact menu path in Dayflow HRMS.
+9. If a user asks about payroll, leave balances, attendance logs, or employee records, explain the process but do not fabricate specific personal values.
+10. Focus on HRMS-related assistance.`;
 
 const generateAIResponse = async (userMessage, history = []) => {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -43,34 +52,45 @@ const generateAIResponse = async (userMessage, history = []) => {
 };
 
 function getHRMSFallbackResponse(query) {
-  const q = (query || '').toLowerCase();
+  const q = (query || '').toLowerCase().trim();
+
+  if (q === 'hi' || q === 'hello' || q === 'hey' || q === 'greetings') {
+    return "Hello! 👋 Welcome to Dayflow HRMS. How can I assist you today?";
+  }
+
+  if (q.includes('what is my salary') || q.includes('my pay') || q.includes('how much do i earn')) {
+    return "I do not have direct access to your personal payroll records. Please check the **Payroll & Salary** module in the sidebar or contact your HR administrator.";
+  }
+
+  if (q.includes('how do i apply for leave') || q.includes('apply leave') || q.includes('take leave')) {
+    return "To apply for leave:\n\n1. Open the **Leave Applications** module from the left sidebar.\n2. Click **Apply New Leave**.\n3. Select your leave type (Casual, Medical, Earned).\n4. Choose start and end dates.\n5. Enter a reason for your request.\n6. Click **Submit Application**.\n\nYou can track approval status directly from the Leave Applications section.";
+  }
 
   if (q.includes('attendance') || q.includes('check in') || q.includes('clock') || q.includes('punch')) {
-    return "You can manage your attendance on the **Attendance Clock** page. Click 'Check In' at the start of your shift and 'Check Out' when finishing. If you missed a clock timestamp, submit a request via **Clock Correction**!";
-  }
-  if (q.includes('leave') || q.includes('vacation') || q.includes('time off') || q.includes('sick') || q.includes('holiday')) {
-    return "To apply for leave, navigate to **Leave Applications** in the sidebar. You can view remaining balances (Casual, Medical, Annual), track HR approval status, and check the **Holiday Calendar** for company holidays!";
-  }
-  if (q.includes('payroll') || q.includes('salary') || q.includes('pay') || q.includes('payslip') || q.includes('bonus')) {
-    return "Your compensation details and monthly payslips are available under **Payroll & Salary**. You can view basic salary, bonuses, deductions, net pay, and download PDF payslips directly!";
-  }
-  if (q.includes('task') || q.includes('assign') || q.includes('todo') || q.includes('work')) {
-    return "Access deliverables under **Tasks & Portal**. Admins can assign tasks to employees with priorities and due dates, while employees can update status between Pending, In Progress, and Completed.";
-  }
-  if (q.includes('department') || q.includes('role') || q.includes('employee') || q.includes('directory')) {
-    return "Administrators can manage enterprise departments via **Departments** and browse staff in the **Employee Directory**. Contact HR for role permission updates!";
-  }
-  if (q.includes('profile') || q.includes('avatar') || q.includes('photo') || q.includes('picture')) {
-    return "You can update personal details and upload a profile picture under **My Profile**. Click the camera button on your avatar to upload a new photo!";
-  }
-  if (q.includes('document') || q.includes('vault') || q.includes('file')) {
-    return "Official company documents and policies can be securely viewed and uploaded under **Document Vault**.";
-  }
-  if (q.includes('hello') || q.includes('hi') || q.includes('hey') || q.includes('greetings')) {
-    return "Hello! I am Dayflow AI Assistant 👋 How can I help you today? You can ask me about Attendance, Leave Applications, Payroll & Salary, Task Management, or system navigation!";
+    return "To log your shift attendance:\n\n1. Open the **Attendance Clock** module from the left sidebar.\n2. Click **Check In Now** when your shift begins.\n3. Click **Check Out Now** when your shift ends.\n\nIf you missed a clock timestamp, submit a request via the **Clock Correction** module.";
   }
 
-  return "I am Dayflow AI Assistant 🤖 I can help you navigate Attendance, Leave Applications, Payroll & Salary statements, Task assignments, Document Vault, and HR policies. What would you like to ask?";
+  if (q.includes('leave') || q.includes('vacation') || q.includes('holiday')) {
+    return "To manage leaves and holidays:\n\n• **Leave Applications**: View your leave quotas, submit new requests, and track HR approvals.\n• **Holiday Calendar**: Browse upcoming official company holidays and observances.";
+  }
+
+  if (q.includes('payroll') || q.includes('salary') || q.includes('payslip')) {
+    return "To view your compensation details:\n\n1. Open the **Payroll & Salary** module from the sidebar.\n2. View your basic salary, bonuses, deductions, and net pay.\n3. Click **Download PDF Payslip** to export official payment statements.";
+  }
+
+  if (q.includes('task') || q.includes('deliverable') || q.includes('todo')) {
+    return "To manage workplace tasks:\n\n1. Open the **Tasks & Portal** module.\n2. Employees can view assigned tasks and update status between Pending, In Progress, and Completed.\n3. Administrators can click **Assign New Task** to assign tasks to team members.";
+  }
+
+  if (q.includes('profile') || q.includes('avatar') || q.includes('photo') || q.includes('picture')) {
+    return "To update your personal profile:\n\n1. Open the **My Profile** module.\n2. Hover over your avatar image and click the camera icon to upload a new profile picture.\n3. Edit phone number and address, then click **Save Profile Changes**.";
+  }
+
+  if (q.includes('department') || q.includes('employee') || q.includes('directory')) {
+    return "For organizational structure and staff details:\n\n• **Departments**: Browse company department heads, budgets, and member counts.\n• **Employee Directory**: Administrators can search, filter, edit, or add new staff members.";
+  }
+
+  return "I am Dayflow AI Assistant 🤖 I can guide you step-by-step through Attendance, Leave Applications, Payroll & Salary, Task Management, Document Vault, and HR Policies. What would you like assistance with?";
 }
 
 module.exports = {
