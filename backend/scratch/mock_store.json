@@ -41,6 +41,20 @@
       "password_hash": "$2a$10$itaYQOsU20NrneuAitAneeNWCWKsuw6N/XKteCzwE7COCphN3CAyS",
       "role": "employee",
       "created_at": "2026-08-22T08:41:05.396Z"
+    },
+    {
+      "id": 7,
+      "email": "717824p136@kce.ac.in",
+      "password_hash": "$2a$10$VI4POLsxa8UF.uiQBEEG5.xlGTW/drn1Vktj44ykJQU5Ysy5XzSGG",
+      "role": "employee",
+      "created_at": "2026-08-22T09:23:12.533Z"
+    },
+    {
+      "id": 8,
+      "email": "abi@gmail.com",
+      "password_hash": "$2a$10$O4aAzN637dE2ph8evpSp9OCr4YPKMq5UAMdwRlHeVGE/c8E4hJjN2",
+      "role": "admin",
+      "created_at": "2026-08-22T09:43:02.421Z"
     }
   ],
   "departments": [
@@ -132,12 +146,12 @@
       "first_name": "HariHaran",
       "last_name": "K",
       "email": "hari@gmail.com",
-      "phone": "",
-      "address": "",
+      "phone": "5555566666",
+      "address": "Myleripalayam\nCoimbatore",
       "department": "Engineering",
       "designation": "Software Developer",
       "joining_date": "2026-08-22",
-      "avatar_url": "https://api.dicebear.com/7.x/avataaars/svg?seed=HariHaran%20K"
+      "avatar_url": "http://localhost:5000/uploads/avatar-5-1787392785611-725083955.jpeg"
     },
     {
       "id": 6,
@@ -151,6 +165,32 @@
       "designation": "Software Developer",
       "joining_date": "2026-08-22",
       "avatar_url": "https://api.dicebear.com/7.x/avataaars/svg?seed=sabari%20b"
+    },
+    {
+      "id": 7,
+      "user_id": 7,
+      "first_name": "Naveen",
+      "last_name": "R S",
+      "email": "717824p136@kce.ac.in",
+      "phone": "9344255537",
+      "address": "Kanyakumari",
+      "department": "Engineering",
+      "designation": "Software Developer",
+      "joining_date": "2026-08-22",
+      "avatar_url": "https://api.dicebear.com/7.x/avataaars/svg?seed=Naveen%20R%20S"
+    },
+    {
+      "id": 8,
+      "user_id": 8,
+      "first_name": "HariHaran",
+      "last_name": "K",
+      "email": "abi@gmail.com",
+      "phone": "",
+      "address": "",
+      "department": "Engineering",
+      "designation": "Software Developer",
+      "joining_date": "2026-08-22",
+      "avatar_url": "https://api.dicebear.com/7.x/avataaars/svg?seed=HariHaran%20K"
     }
   ],
   "attendance": [
@@ -198,6 +238,15 @@
       "check_out": null,
       "status": "Present",
       "notes": "2026-08-22 20:37:00"
+    },
+    {
+      "id": 6,
+      "employee_id": 7,
+      "date": "2026-08-22",
+      "check_in": "2026-08-22 09:23:19",
+      "check_out": null,
+      "status": "Present",
+      "notes": "Present"
     }
   ],
   "leave_requests": [
@@ -208,7 +257,7 @@
       "start_date": "2026-08-25",
       "end_date": "2026-08-26",
       "reason": "Feeling unwell, scheduled medical checkup.",
-      "status": "Pending",
+      "status": "Rejected",
       "admin_comment": null,
       "created_at": "2026-08-22T08:38:12.704Z"
     },
@@ -326,6 +375,15 @@
       "target_department": "Engineering",
       "author_name": "Dayflow Admin",
       "created_at": "2026-08-22T09:18:50.603Z"
+    },
+    {
+      "id": 3,
+      "title": "gnfngf",
+      "content": ",jjbmnv",
+      "priority": "Normal",
+      "target_department": "All",
+      "author_name": "HariHaran K",
+      "created_at": "2026-08-22T09:20:40.062Z"
     }
   ],
   "tasks": [
@@ -477,16 +535,6 @@
       "created_at": "2026-08-22T09:18:50.615Z"
     },
     {
-      "id": 11,
-      "user_id": 5,
-      "title": "🔵 New Announcement: Q3 All-Hands Engineering Townhall 2026",
-      "message": "All engineering teams are invited to our quarterly roadmap townhall on Friday.",
-      "type": "announcement",
-      "is_read": false,
-      "read_status": false,
-      "created_at": "2026-08-22T09:18:50.616Z"
-    },
-    {
       "id": 12,
       "user_id": 6,
       "title": "🔵 New Announcement: Q3 All-Hands Engineering Townhall 2026",
@@ -495,6 +543,76 @@
       "is_read": false,
       "read_status": false,
       "created_at": "2026-08-22T09:18:50.617Z"
+    },
+    {
+      "id": 13,
+      "user_id": 1,
+      "title": "🔵 New Announcement: gnfngf",
+      "message": ",jjbmnv",
+      "type": "announcement",
+      "is_read": false,
+      "read_status": false,
+      "created_at": "2026-08-22T09:20:40.072Z"
+    },
+    {
+      "id": 14,
+      "user_id": 2,
+      "title": "🔵 New Announcement: gnfngf",
+      "message": ",jjbmnv",
+      "type": "announcement",
+      "is_read": false,
+      "read_status": false,
+      "created_at": "2026-08-22T09:20:40.075Z"
+    },
+    {
+      "id": 15,
+      "user_id": 3,
+      "title": "🔵 New Announcement: gnfngf",
+      "message": ",jjbmnv",
+      "type": "announcement",
+      "is_read": false,
+      "read_status": false,
+      "created_at": "2026-08-22T09:20:40.082Z"
+    },
+    {
+      "id": 16,
+      "user_id": 4,
+      "title": "🔵 New Announcement: gnfngf",
+      "message": ",jjbmnv",
+      "type": "announcement",
+      "is_read": false,
+      "read_status": false,
+      "created_at": "2026-08-22T09:20:40.093Z"
+    },
+    {
+      "id": 18,
+      "user_id": 6,
+      "title": "🔵 New Announcement: gnfngf",
+      "message": ",jjbmnv",
+      "type": "announcement",
+      "is_read": false,
+      "read_status": false,
+      "created_at": "2026-08-22T09:20:40.105Z"
+    },
+    {
+      "id": 20,
+      "user_id": 2,
+      "title": "🔴 Leave Request Rejected",
+      "message": "Your Sick request was rejected by HR.",
+      "type": "leave",
+      "is_read": false,
+      "read_status": false,
+      "created_at": "2026-08-22T09:56:47.858Z"
+    },
+    {
+      "id": 18,
+      "user_id": 1,
+      "title": "💵 Salary Generated",
+      "message": "Your payslip for 2026-10 ($6,300) is available for download.",
+      "type": "payroll",
+      "is_read": false,
+      "read_status": false,
+      "created_at": "2026-08-22T10:18:45.042Z"
     }
   ],
   "audit_logs": []

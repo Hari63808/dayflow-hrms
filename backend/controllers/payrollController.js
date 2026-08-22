@@ -140,15 +140,25 @@ const updatePayroll = async (req, res) => {
 const deletePayroll = async (req, res) => {
   try {
     const { id } = req.params;
+    console.log(`[PAYROLL DELETE] Requested deletion for Payroll ID: ${id}`);
 
     const existing = await db.query('SELECT * FROM payroll WHERE id = ?', [id]);
     if (!existing || existing.length === 0) {
+      console.warn(`[PAYROLL DELETE] Payroll ID ${id} not found.`);
       return res.status(404).json({ success: false, message: 'Payroll record not found.' });
     }
 
     await db.query('DELETE FROM payroll WHERE id = ?', [id]);
 
-    return res.json({ success: true, message: 'Payroll entry deleted successfully.' });
+    const remaining = await db.query('SELECT * FROM payroll');
+    console.log(`[PAYROLL DELETE] Remaining payroll count after deletion of ID ${id}: ${remaining.length}`);
+    console.log('[PAYROLL DELETE] Remaining records:', remaining.map(p => ({ id: p.id, month: p.month, empId: p.employee_id })));
+
+    return res.json({
+      success: true,
+      message: 'Payroll entry deleted successfully.',
+      remainingCount: remaining.length
+    });
   } catch (error) {
     console.error('deletePayroll Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to delete payroll entry.' });

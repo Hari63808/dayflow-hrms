@@ -320,15 +320,43 @@ const executeMockQuery = (sql, params = []) => {
       basic_salary: parseFloat(params[2]) || 0,
       bonus: parseFloat(params[3]) || 0,
       deductions: parseFloat(params[4]) || 0,
-      net_salary: parseFloat(params[5]) || 0,
-      payment_date: params[6] || new Date().toISOString().split('T')[0],
-      status: params[7] || 'Paid'
+      net_salary: (parseFloat(params[2]) || 0) + (parseFloat(params[3]) || 0) - (parseFloat(params[4]) || 0),
+      payment_date: params[5] || new Date().toISOString().split('T')[0],
+      status: params[6] || 'Paid',
+      created_at: new Date()
     };
     mockStore.payroll.push(newPay);
     saveMockStore();
     return { insertId: newId };
   }
+  if (upperSql.includes('UPDATE PAYROLL SET')) {
+    const id = Number(params[params.length - 1]);
+    const pay = mockStore.payroll.find(p => p.id === id);
+    if (pay) {
+      pay.basic_salary = parseFloat(params[0]);
+      pay.bonus = parseFloat(params[1]);
+      pay.deductions = parseFloat(params[2]);
+      pay.net_salary = pay.basic_salary + pay.bonus - pay.deductions;
+      pay.status = params[3] || pay.status;
+      pay.payment_date = params[4] || pay.payment_date;
+    }
+    saveMockStore();
+    return { affectedRows: 1 };
+  }
+  if (upperSql.includes('DELETE FROM PAYROLL WHERE ID')) {
+    const id = Number(params[0]);
+    mockStore.payroll = mockStore.payroll.filter(p => p.id !== id);
+    saveMockStore();
+    return { affectedRows: 1 };
+  }
   if (upperSql.includes('FROM PAYROLL')) {
+    if (upperSql.includes('WHERE ID = ?')) {
+      const id = Number(params[0]);
+      const pay = mockStore.payroll.find(p => p.id === id);
+      if (!pay) return [];
+      const emp = mockStore.employees.find(e => e.id === pay.employee_id);
+      return [{ ...pay, first_name: emp?.first_name || '', last_name: emp?.last_name || '', designation: emp?.designation || '', department: emp?.department || '' }];
+    }
     if (upperSql.includes('WHERE EMPLOYEE_ID = ?')) {
       const empId = Number(params[0]);
       const pays = mockStore.payroll.filter(p => p.employee_id === empId);
