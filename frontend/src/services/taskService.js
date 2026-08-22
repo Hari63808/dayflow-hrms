@@ -5,6 +5,10 @@ export const taskService = {
     const res = await api.get('/tasks');
     return res.data;
   },
+  getMyTasks: async () => {
+    const res = await api.get('/tasks/my');
+    return res.data;
+  },
   addTask: async (data) => {
     const res = await api.post('/tasks', data);
     return res.data;

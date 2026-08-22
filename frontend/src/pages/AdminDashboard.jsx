@@ -17,7 +17,10 @@ import {
   PieChart as PieIcon,
   ShieldCheck,
   Clock,
-  ArrowUpRight
+  ArrowUpRight,
+  Building,
+  CheckSquare,
+  Clock3
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { 
@@ -160,14 +163,21 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      {/* 6 Key Dynamic Metrics Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
+      {/* Dynamic Key Metrics Cards Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '1.25rem' }}>
         <StatCard
           title="Total Employees"
           value={stats?.totalEmployees ?? 0}
           subtext="Active staff profiles"
           icon={Users}
           color="#6366f1"
+        />
+        <StatCard
+          title="Departments"
+          value={stats?.totalDepartments ?? 0}
+          subtext="Active org units"
+          icon={Building}
+          color="#8b5cf6"
         />
         <StatCard
           title="Present Today"
@@ -198,11 +208,18 @@ const AdminDashboard = () => {
           color="#06b6d4"
         />
         <StatCard
+          title="Total Workplace Tasks"
+          value={stats?.totalTasks ?? 0}
+          subtext={`${stats?.pendingTasks ?? 0} pending • ${stats?.completedTasks ?? 0} done`}
+          icon={CheckSquare}
+          color="#3b82f6"
+        />
+        <StatCard
           title="Monthly Payroll"
           value={`$${(parseFloat(stats?.monthlyPayrollTotal ?? 0) || 0).toLocaleString()}`}
           subtext="Total net compensation"
           icon={CircleDollarSign}
-          color="#8b5cf6"
+          color="#10b981"
         />
       </div>
 
@@ -249,18 +266,18 @@ const AdminDashboard = () => {
         <div className="glass-card" style={{ padding: '1.75rem', display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
             <PieIcon size={20} color="var(--secondary)" />
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 700 }}>Leave Category Share</h3>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 700 }}>Leave Category Breakdown</h3>
           </div>
 
-          <div style={{ width: '100%', height: '260px', flex: 1 }}>
+          <div style={{ width: '100%', height: '220px', flex: 1 }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={leaveAnalytics}
                   cx="50%"
                   cy="50%"
-                  innerRadius={55}
-                  outerRadius={85}
+                  innerRadius={50}
+                  outerRadius={80}
                   paddingAngle={5}
                   dataKey="count"
                 >
@@ -271,69 +288,81 @@ const AdminDashboard = () => {
                 <Tooltip
                   contentStyle={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-color)', borderRadius: '10px' }}
                 />
-                <Legend verticalAlign="bottom" height={36} />
+                <Legend />
               </PieChart>
             </ResponsiveContainer>
           </div>
         </div>
       </div>
 
-      {/* Recent Activity Feed Table */}
+      {/* Recent Workforce Activity Stream */}
       <div className="glass-card" style={{ padding: '1.75rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Activity size={20} color="var(--primary)" />
-            <div>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 700 }}>Live Workforce Activity Feed</h3>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Real-time stream of employee check-ins & leave requests</p>
-            </div>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 700 }}>Real-Time Workforce Activity Feed</h3>
           </div>
-          <Link to="/leaves" className="btn btn-outline btn-sm" style={{ gap: '0.35rem' }}>
-            <span>Review Applications</span>
+          <Link to="/attendance" className="btn btn-outline btn-sm" style={{ gap: '0.35rem' }}>
+            <span>Full Attendance Audit</span>
             <ArrowUpRight size={14} />
           </Link>
         </div>
 
         {recentActivities.length === 0 ? (
           <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-            No recent workforce activities recorded.
+            No recent activity records logged.
           </div>
         ) : (
-          <div className="table-responsive">
-            <table className="custom-table">
-              <thead>
-                <tr>
-                  <th>Event Type</th>
-                  <th>Employee Name</th>
-                  <th>Details / Reason</th>
-                  <th>Timestamp</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentActivities.map((act, idx) => {
-                  const activityType = (act?.activity_type ?? 'activity').toString();
-                  const isLeave = activityType.toLowerCase() === 'leave';
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {recentActivities.map((act, index) => {
+              const name = `${act?.first_name ?? 'Employee'} ${act?.last_name ?? ''}`;
+              const isLeave = act?.activity_type === 'leave';
 
-                  return (
-                    <tr key={idx}>
-                      <td>
-                        <span className={`badge ${isLeave ? 'badge-warning' : 'badge-info'}`}>
-                          {isLeave ? <CalendarDays size={13} /> : <Clock size={13} />}
-                          {activityType.toUpperCase()}
-                        </span>
-                      </td>
-                      <td style={{ fontWeight: 600 }}>{act?.first_name ?? 'Employee'} {act?.last_name ?? ''}</td>
-                      <td style={{ fontSize: '0.875rem' }}>{act?.detail ?? 'Clock-in log'}</td>
-                      <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                        {new Date(act?.created_at ?? Date.now()).toLocaleString()}
-                      </td>
-                      <td><StatusBadge status={act?.status ?? 'Pending'} /></td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+              return (
+                <div
+                  key={act?.id ?? index}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '0.85rem 1.25rem',
+                    backgroundColor: 'var(--bg-app)',
+                    borderRadius: '12px',
+                    border: '1px solid var(--border-color)'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '10px',
+                      backgroundColor: isLeave ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: isLeave ? '#f59e0b' : '#10b981'
+                    }}>
+                      {isLeave ? <CalendarDays size={20} /> : <Clock size={20} />}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                        {name}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        {isLeave ? `Applied for ${act?.detail ?? 'Leave'}` : `Clocked shift (${act?.detail || 'In/Out'})`}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <StatusBadge status={act?.status ?? 'Pending'} />
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                      {act?.created_at ? new Date(act.created_at).toLocaleTimeString() : 'Just now'}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

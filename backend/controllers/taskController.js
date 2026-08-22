@@ -1,6 +1,6 @@
 const db = require('../config/db');
 
-// @desc    Get tasks list (Admin gets all, Employee gets personal assigned tasks)
+// @desc    Get all tasks for Admin / HR
 // @route   GET /api/tasks
 // @access  Private
 const getTasks = async (req, res) => {
@@ -20,9 +20,7 @@ const getTasks = async (req, res) => {
       let empId = req.employee ? req.employee.id : null;
       if (!empId && req.user) {
         const emps = await db.query('SELECT id FROM employees WHERE user_id = ? OR LOWER(email) = LOWER(?)', [req.user.id, req.user.email]);
-        if (emps && emps.length > 0) {
-          empId = emps[0].id;
-        }
+        if (emps && emps.length > 0) empId = emps[0].id;
       }
 
       if (empId) {
@@ -30,14 +28,39 @@ const getTasks = async (req, res) => {
           'SELECT * FROM tasks WHERE assigned_to = ? ORDER BY due_date ASC',
           [empId]
         );
-      } else {
-        tasks = [];
       }
     }
     return res.json({ success: true, count: tasks.length, tasks });
   } catch (error) {
     console.error('getTasks Error:', error);
     return res.status(500).json({ success: false, message: 'Failed to fetch task list.' });
+  }
+};
+
+// @desc    Get logged in employee's assigned tasks
+// @route   GET /api/tasks/my
+// @access  Private (Employee)
+const getMyTasks = async (req, res) => {
+  try {
+    let empId = req.employee ? req.employee.id : null;
+    if (!empId && req.user) {
+      const emps = await db.query('SELECT id FROM employees WHERE user_id = ? OR LOWER(email) = LOWER(?)', [req.user.id, req.user.email]);
+      if (emps && emps.length > 0) empId = emps[0].id;
+    }
+
+    if (!empId) {
+      return res.status(404).json({ success: false, message: 'Employee record not found.' });
+    }
+
+    const tasks = await db.query(
+      'SELECT * FROM tasks WHERE assigned_to = ? ORDER BY due_date ASC',
+      [empId]
+    );
+
+    return res.json({ success: true, count: tasks.length, tasks });
+  } catch (error) {
+    console.error('getMyTasks Error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch assigned tasks.' });
   }
 };
 
@@ -110,6 +133,7 @@ const updateTaskStatus = async (req, res) => {
 
 module.exports = {
   getTasks,
+  getMyTasks,
   addTask,
   updateTaskStatus
 };

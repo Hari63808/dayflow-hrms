@@ -7,10 +7,12 @@ const getAdminStats = async (req, res) => {
   try {
     const todayStr = new Date().toISOString().split('T')[0];
 
-    // 1. Total Employees
-    const empRes = await db.query('SELECT COUNT(*) as count FROM employees');
+    // 1. Total Employees & Departments
     const allEmployees = await db.query('SELECT * FROM employees');
-    const totalEmployees = empRes && empRes[0] ? (empRes[0].count || allEmployees.length) : allEmployees.length;
+    const totalEmployees = allEmployees.length;
+
+    const allDepts = await db.query('SELECT * FROM departments');
+    const totalDepartments = allDepts.length;
 
     // 2. Today's Attendance Breakdown
     const todayAttendance = await db.query('SELECT * FROM attendance WHERE date = ?', [todayStr]);
@@ -26,7 +28,13 @@ const getAdminStats = async (req, res) => {
     const payrollRecords = await db.query('SELECT * FROM payroll');
     const monthlyPayrollTotal = payrollRecords.reduce((sum, item) => sum + (parseFloat(item.net_salary) || 0), 0);
 
-    // 5. Recent Activities Feed (Merged check-ins & leave requests)
+    // 5. Tasks Breakdown
+    const allTasks = await db.query('SELECT * FROM tasks');
+    const totalTasks = allTasks.length;
+    const pendingTasks = allTasks.filter(t => t.status === 'Pending' || t.status === 'In Progress').length;
+    const completedTasks = allTasks.filter(t => t.status === 'Completed').length;
+
+    // 6. Recent Activities Feed (Merged check-ins, leave requests, tasks)
     const recentLeaves = await db.query(`
       SELECT l.id, l.created_at, l.status, l.leave_type as detail, e.first_name, e.last_name, 'leave' as activity_type 
       FROM leave_requests l 
@@ -46,7 +54,7 @@ const getAdminStats = async (req, res) => {
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
       .slice(0, 7);
 
-    // 6. Attendance Analytics Chart (7-day trend series)
+    // 7. Attendance Analytics Chart (7-day trend series)
     const days = [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
@@ -54,7 +62,6 @@ const getAdminStats = async (req, res) => {
       const dateStr = d.toISOString().split('T')[0];
       const dayLabel = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
-      // Fetch attendance for dateStr
       const dayAtt = await db.query('SELECT * FROM attendance WHERE date = ?', [dateStr]);
       const presCount = dayAtt.filter(a => a.status === 'Present' || a.status === 'Half-Day').length;
       const absCount = Math.max(0, totalEmployees - presCount);
@@ -67,7 +74,7 @@ const getAdminStats = async (req, res) => {
       });
     }
 
-    // 7. Leave Analytics Chart (Distribution by Type)
+    // 8. Leave Analytics Chart (Distribution by Type)
     const leaveTypes = ['Paid', 'Sick', 'Casual', 'Unpaid'];
     const leaveAnalytics = leaveTypes.map(type => {
       const count = allLeaves.filter(l => l.leave_type === type).length;
@@ -78,11 +85,15 @@ const getAdminStats = async (req, res) => {
       success: true,
       stats: {
         totalEmployees,
+        totalDepartments,
         presentToday,
         absentToday,
         pendingLeaves,
         approvedLeaves,
         monthlyPayrollTotal,
+        totalTasks,
+        pendingTasks,
+        completedTasks,
         recentActivities,
         attendanceAnalytics: days,
         leaveAnalytics
@@ -99,18 +110,24 @@ const getAdminStats = async (req, res) => {
 // @access  Private (Employee)
 const getEmployeeStats = async (req, res) => {
   try {
-    if (!req.employee) {
+    let empId = req.employee ? req.employee.id : null;
+    if (!empId && req.user) {
+      const emps = await db.query('SELECT id FROM employees WHERE user_id = ? OR LOWER(email) = LOWER(?)', [req.user.id, req.user.email]);
+      if (emps && emps.length > 0) empId = emps[0].id;
+    }
+
+    if (!empId) {
       return res.status(400).json({ success: false, message: 'Employee profile missing.' });
     }
 
     const todayStr = new Date().toISOString().split('T')[0];
 
     // Today Attendance
-    const todayRecs = await db.query('SELECT * FROM attendance WHERE employee_id = ? AND date = ?', [req.employee.id, todayStr]);
+    const todayRecs = await db.query('SELECT * FROM attendance WHERE employee_id = ? AND date = ?', [empId, todayStr]);
     const todayAttendance = todayRecs.length > 0 ? todayRecs[0] : null;
 
     // All employee attendance
-    const myAttendance = await db.query('SELECT * FROM attendance WHERE employee_id = ? ORDER BY date DESC', [req.employee.id]);
+    const myAttendance = await db.query('SELECT * FROM attendance WHERE employee_id = ? ORDER BY date DESC', [empId]);
     const presentDays = myAttendance.filter(a => a.status === 'Present' || a.status === 'Half-Day').length;
 
     // Attendance percentage (current month workdays elapsed)
@@ -119,7 +136,7 @@ const getEmployeeStats = async (req, res) => {
     const attendancePercentage = currentDayOfMonth > 0 ? Math.min(100, Math.round((presentDays / currentDayOfMonth) * 100)) : 100;
 
     // Leaves breakdown
-    const myLeaves = await db.query('SELECT * FROM leave_requests WHERE employee_id = ? ORDER BY created_at DESC', [req.employee.id]);
+    const myLeaves = await db.query('SELECT * FROM leave_requests WHERE employee_id = ? ORDER BY created_at DESC', [empId]);
     const pendingLeaves = myLeaves.filter(l => l.status === 'Pending').length;
     const approvedLeaves = myLeaves.filter(l => l.status === 'Approved').length;
 
@@ -137,8 +154,14 @@ const getEmployeeStats = async (req, res) => {
     const leaveBalance = Math.max(0, annualAllowance - leaveDaysTaken);
 
     // Latest Salary Summary
-    const myPayroll = await db.query('SELECT * FROM payroll WHERE employee_id = ? ORDER BY month DESC LIMIT 1', [req.employee.id]);
+    const myPayroll = await db.query('SELECT * FROM payroll WHERE employee_id = ? ORDER BY month DESC LIMIT 1', [empId]);
     const salarySummary = myPayroll.length > 0 ? myPayroll[0] : null;
+
+    // Tasks Breakdown for Employee
+    const myTasks = await db.query('SELECT * FROM tasks WHERE assigned_to = ?', [empId]);
+    const assignedTasks = myTasks.length;
+    const pendingTasksCount = myTasks.filter(t => t.status === 'Pending' || t.status === 'In Progress').length;
+    const completedTasksCount = myTasks.filter(t => t.status === 'Completed').length;
 
     // Recent Attendance History (last 7)
     const recentAttendance = myAttendance.slice(0, 7);
@@ -155,6 +178,9 @@ const getEmployeeStats = async (req, res) => {
         approvedLeaves,
         salarySummary,
         todayAttendance,
+        assignedTasks,
+        pendingTasks: pendingTasksCount,
+        completedTasks: completedTasksCount,
         recentAttendance
       }
     });

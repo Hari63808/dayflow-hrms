@@ -18,7 +18,8 @@ import {
   RefreshCw, 
   Percent, 
   Award,
-  Calendar
+  Calendar,
+  CheckSquare
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -116,7 +117,7 @@ const EmployeeDashboard = () => {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
           <img
-            src={user?.employee?.avatar_url ?? `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email ?? 'employee'}`}
+            src={user?.employee?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email ?? 'employee'}`}
             alt="Profile Avatar"
             style={{
               width: '80px',
@@ -207,7 +208,7 @@ const EmployeeDashboard = () => {
       )}
 
       {/* Dynamic Key Performance Metrics Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '1.25rem' }}>
         <StatCard
           title="Present Days"
           value={stats?.presentDays ?? 0}
@@ -228,6 +229,13 @@ const EmployeeDashboard = () => {
           subtext={`Out of ${stats?.annualAllowance ?? 24} annual quota`}
           icon={Award}
           color="#8b5cf6"
+        />
+        <StatCard
+          title="Assigned Tasks"
+          value={stats?.assignedTasks ?? 0}
+          subtext={`${stats?.pendingTasks ?? 0} pending • ${stats?.completedTasks ?? 0} done`}
+          icon={CheckSquare}
+          color="#3b82f6"
         />
         <StatCard
           title="Pending Requests"
