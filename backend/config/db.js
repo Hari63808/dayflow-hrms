@@ -61,7 +61,12 @@ const mockStore = {
   ],
   documents: [],
   notifications: [
-    { id: 1, user_id: 2, title: 'Welcome to Dayflow HRMS', message: 'Your employee profile is active. Check in for your shift today.', type: 'info', read_status: false, created_at: new Date() }
+    { id: 1, user_id: 1, title: '🛡️ System Admin Activated', message: 'Dayflow HRMS Enterprise System is online and monitoring company operations.', type: 'info', is_read: false, read_status: false, created_at: new Date() },
+    { id: 2, user_id: 2, title: 'Welcome to Dayflow HRMS', message: 'Your employee profile is active. Check in for your shift today.', type: 'info', is_read: false, read_status: false, created_at: new Date() },
+    { id: 3, user_id: 2, title: '🟢 Leave Approved', message: 'Your Casual leave request from Sep 01 to Sep 03 was approved by HR.', type: 'leave', is_read: false, read_status: false, created_at: new Date() },
+    { id: 4, user_id: 2, title: '🟣 New Task Assigned', message: 'Complete Phase 4 HRMS Upgrade assigned by Dayflow Admin.', type: 'task', is_read: false, read_status: false, created_at: new Date() },
+    { id: 5, user_id: 3, title: '🟡 New Appraisal Available', message: 'Your H1 2026 performance review rating (5/5 Stars) is available.', type: 'appraisal', is_read: false, read_status: false, created_at: new Date() },
+    { id: 6, user_id: 4, title: '📢 New Announcement: Q3 Townhall', message: 'Join us on Friday at 3 PM EST for company updates & roadmap reveals.', type: 'announcement', is_read: false, read_status: false, created_at: new Date() }
   ],
   audit_logs: []
 };

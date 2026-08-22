@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { createNotification } = require('./notificationController');
 
 const getAnnouncements = async (req, res) => {
   try {
@@ -26,6 +27,19 @@ const createAnnouncement = async (req, res) => {
 
     const newId = result.insertId || result.id;
     const added = await db.query('SELECT * FROM announcements WHERE id = ?', [newId]);
+
+    // Create notifications for all system users
+    const allUsers = await db.query('SELECT id FROM users');
+    if (allUsers && allUsers.length > 0) {
+      for (const u of allUsers) {
+        await createNotification({
+          userId: u.id,
+          title: `🔵 New Announcement: ${title}`,
+          message: content.length > 120 ? content.substring(0, 120) + '...' : content,
+          type: 'announcement'
+        });
+      }
+    }
 
     return res.status(201).json({
       success: true,

@@ -1,25 +1,32 @@
 {
   "users": [
     {
-      "id": 6,
-      "email": "hari@gmail.com",
-      "password_hash": "$2a$10$9cZTH8Qk7Q/wcAasO00F/.SLfX3bUHmlF695bGYlku57j//QYyXZi",
-      "role": "employee",
-      "created_at": "2026-08-22T08:18:36.893Z"
-    },
-    {
-      "id": 7,
-      "email": "sabari@gmail.com",
-      "password_hash": "$2a$10$ZbKpZZ0lvqbEU3g9IOZWvOsihRLJggEkeoro7UtPH29TgzqWIL9OW",
+      "id": 1,
+      "email": "admin@dayflow.com",
+      "password_hash": "$2a$10$CwTycUXWue0Thq9StjUM0uJ81/Q1QxGk5jK67Y9w1Z.c9h8.a7G9G",
       "role": "admin",
-      "created_at": "2026-08-22T08:19:27.306Z"
+      "created_at": "2026-08-22T08:38:12.703Z"
     },
     {
-      "id": 8,
-      "email": "abi@gmail.com",
-      "password_hash": "$2a$10$IdVoMmMt1geErdfVIS.5XOkVq.8eKV.wBigWVDgj2nc29eZJ1ArPm",
+      "id": 2,
+      "email": "employee@dayflow.com",
+      "password_hash": "$2a$10$CwTycUXWue0Thq9StjUM0uJ81/Q1QxGk5jK67Y9w1Z.c9h8.a7G9G",
       "role": "employee",
-      "created_at": "2026-08-22T08:21:03.596Z"
+      "created_at": "2026-08-22T08:38:12.703Z"
+    },
+    {
+      "id": 3,
+      "email": "sarah.connor@dayflow.com",
+      "password_hash": "$2a$10$CwTycUXWue0Thq9StjUM0uJ81/Q1QxGk5jK67Y9w1Z.c9h8.a7G9G",
+      "role": "employee",
+      "created_at": "2026-08-22T08:38:12.703Z"
+    },
+    {
+      "id": 4,
+      "email": "michael.scott@dayflow.com",
+      "password_hash": "$2a$10$CwTycUXWue0Thq9StjUM0uJ81/Q1QxGk5jK67Y9w1Z.c9h8.a7G9G",
+      "role": "employee",
+      "created_at": "2026-08-22T08:38:12.703Z"
     }
   ],
   "departments": [
@@ -54,43 +61,56 @@
   ],
   "employees": [
     {
-      "id": 6,
-      "user_id": 6,
-      "first_name": "HariHaran",
-      "last_name": "K",
-      "email": "hari@gmail.com",
-      "phone": "",
-      "address": "",
-      "department": "Engineering",
-      "designation": "Software Developer",
-      "joining_date": "2026-08-22",
-      "avatar_url": "http://localhost:5000/uploads/avatar-6-1787386735975-947801264.jpeg"
+      "id": 1,
+      "user_id": 1,
+      "first_name": "Dayflow",
+      "last_name": "Admin",
+      "email": "admin@dayflow.com",
+      "phone": "+1 (555) 019-2834",
+      "address": "100 Enterprise Way, Suite 400",
+      "department": "Human Resources",
+      "designation": "HR Director",
+      "joining_date": "2024-01-15",
+      "avatar_url": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"
     },
     {
-      "id": 7,
-      "user_id": 7,
-      "first_name": "HariHaran",
-      "last_name": "K",
-      "email": "sabari@gmail.com",
-      "phone": "",
-      "address": "",
+      "id": 2,
+      "user_id": 2,
+      "first_name": "Alex",
+      "last_name": "Morgan",
+      "email": "employee@dayflow.com",
+      "phone": "+1 (555) 012-3456",
+      "address": "742 Evergreen Terrace, Springfield",
       "department": "Engineering",
-      "designation": "Software Developer",
-      "joining_date": "2026-08-22",
-      "avatar_url": "https://api.dicebear.com/7.x/avataaars/svg?seed=HariHaran%20K"
+      "designation": "Senior Frontend Developer",
+      "joining_date": "2024-03-01",
+      "avatar_url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150"
     },
     {
-      "id": 8,
-      "user_id": 8,
-      "first_name": "abi",
-      "last_name": "r",
-      "email": "abi@gmail.com",
-      "phone": "",
-      "address": "",
-      "department": "Engineering",
-      "designation": "Software Developer",
-      "joining_date": "2026-08-22",
-      "avatar_url": "https://api.dicebear.com/7.x/avataaars/svg?seed=abi%20r"
+      "id": 3,
+      "user_id": 3,
+      "first_name": "Sarah",
+      "last_name": "Connor",
+      "email": "sarah.connor@dayflow.com",
+      "phone": "+1 (555) 987-6543",
+      "address": "120 West 42nd Street, New York, NY",
+      "department": "Design",
+      "designation": "UI/UX Product Designer",
+      "joining_date": "2024-05-10",
+      "avatar_url": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150"
+    },
+    {
+      "id": 4,
+      "user_id": 4,
+      "first_name": "Michael",
+      "last_name": "Scott",
+      "email": "michael.scott@dayflow.com",
+      "phone": "+1 (555) 321-7654",
+      "address": "1725 Slough Avenue, Scranton, PA",
+      "department": "Sales & Marketing",
+      "designation": "Regional Sales Manager",
+      "joining_date": "2024-02-20",
+      "avatar_url": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150"
     }
   ],
   "attendance": [
@@ -98,7 +118,7 @@
       "id": 1,
       "employee_id": 2,
       "date": "2026-08-22",
-      "check_in": "2026-08-22 08:17:13",
+      "check_in": "2026-08-22 08:38:12",
       "check_out": null,
       "status": "Present",
       "notes": "Checked in via web portal"
@@ -107,8 +127,8 @@
       "id": 2,
       "employee_id": 3,
       "date": "2026-08-22",
-      "check_in": "2026-08-22 08:17:13",
-      "check_out": "2026-08-22 08:17:13",
+      "check_in": "2026-08-22 08:38:12",
+      "check_out": "2026-08-22 08:38:12",
       "status": "Present",
       "notes": "Completed shift"
     },
@@ -120,15 +140,6 @@
       "check_out": null,
       "status": "Absent",
       "notes": "Uninformed absence"
-    },
-    {
-      "id": 4,
-      "employee_id": 8,
-      "date": "2026-08-22",
-      "check_in": "2026-08-22 08:21:11",
-      "check_out": null,
-      "status": "Present",
-      "notes": "Present"
     }
   ],
   "leave_requests": [
@@ -139,9 +150,9 @@
       "start_date": "2026-08-25",
       "end_date": "2026-08-26",
       "reason": "Feeling unwell, scheduled medical checkup.",
-      "status": "Rejected",
+      "status": "Pending",
       "admin_comment": null,
-      "created_at": "2026-08-22T08:17:13.861Z"
+      "created_at": "2026-08-22T08:38:12.704Z"
     },
     {
       "id": 2,
@@ -152,7 +163,7 @@
       "reason": "Family event out of town.",
       "status": "Approved",
       "admin_comment": "Approved! Have a nice break.",
-      "created_at": "2026-08-22T08:17:13.861Z"
+      "created_at": "2026-08-22T08:38:12.704Z"
     },
     {
       "id": 3,
@@ -163,7 +174,7 @@
       "reason": "Personal errands.",
       "status": "Rejected",
       "admin_comment": "High priority project release scheduled.",
-      "created_at": "2026-08-22T08:17:13.861Z"
+      "created_at": "2026-08-22T08:38:12.704Z"
     }
   ],
   "payroll": [
@@ -220,7 +231,7 @@
       "priority": "High",
       "target_department": "All",
       "author_name": "Dayflow Admin",
-      "created_at": "2026-08-22T08:33:31.371Z"
+      "created_at": "2026-08-22T08:38:12.704Z"
     }
   ],
   "tasks": [
@@ -232,106 +243,113 @@
       "assigned_by": 1,
       "due_date": "2026-08-25",
       "priority": "High",
-      "status": "Completed",
-      "created_at": "2026-08-22T08:17:13.861Z"
-    },
-    {
-      "id": 2,
-      "title": "hvuv",
-      "description": "jnkj",
-      "assigned_to": 7,
-      "assigned_by": 7,
-      "due_date": "2026-08-22",
-      "priority": "Medium",
-      "status": "Completed",
-      "created_at": "2026-08-22T08:20:04.340Z"
-    },
-    {
-      "id": 3,
-      "title": "kjnkj",
-      "description": "m,, ,m ",
-      "assigned_to": 6,
-      "assigned_by": 7,
-      "due_date": "2026-08-22",
-      "priority": "Medium",
-      "status": "Completed",
-      "created_at": "2026-08-22T08:20:18.814Z"
-    },
-    {
-      "id": 4,
-      "title": "jbkjbkbj",
-      "description": "n mn ",
-      "assigned_to": 8,
-      "assigned_by": 7,
-      "due_date": "2026-08-22",
-      "priority": "Medium",
-      "status": "Completed",
-      "created_at": "2026-08-22T08:21:50.515Z"
+      "status": "In Progress",
+      "created_at": "2026-08-22T08:38:12.704Z"
     }
   ],
   "performance_reviews": [
     {
       "id": 1,
-      "employee_id": 6,
+      "employee_id": 2,
       "reviewer_name": "Dayflow Admin",
-      "review_period": "Q3 2026",
-      "rating": 5,
-      "feedback": "Outstanding technical leadership and HRMS integration contributions.",
-      "goals": "Drive enterprise deployment and cloud infrastructure scalability.",
-      "created_at": "2026-08-22T08:27:00.406Z"
-    },
-    {
-      "id": 2,
-      "employee_id": 8,
-      "reviewer_name": "HariHaran K",
       "review_period": "H1 2026",
       "rating": 5,
-      "feedback": "good",
-      "goals": "great\n",
-      "created_at": "2026-08-22T08:28:34.871Z"
+      "feedback": "Exceeded project milestones and demonstrated outstanding team leadership.",
+      "goals": "Lead backend microservice architecture refactoring.",
+      "created_at": "2026-08-22T08:38:12.704Z"
     }
   ],
   "documents": [],
   "notifications": [
     {
       "id": 1,
+      "user_id": 1,
+      "title": "🛡️ System Admin Activated",
+      "message": "Dayflow HRMS Enterprise System is online and monitoring company operations.",
+      "type": "info",
+      "is_read": false,
+      "read_status": false,
+      "created_at": "2026-08-22T08:38:12.704Z"
+    },
+    {
+      "id": 2,
       "user_id": 2,
       "title": "Welcome to Dayflow HRMS",
       "message": "Your employee profile is active. Check in for your shift today.",
       "type": "info",
+      "is_read": true,
       "read_status": true,
-      "created_at": "2026-08-22T08:33:31.371Z",
-      "is_read": true
+      "created_at": "2026-08-22T08:38:12.704Z"
     },
     {
-      "id": 2,
+      "id": 3,
+      "user_id": 2,
+      "title": "🟢 Leave Approved",
+      "message": "Your Casual leave request from Sep 01 to Sep 03 was approved by HR.",
+      "type": "leave",
+      "is_read": true,
+      "read_status": true,
+      "created_at": "2026-08-22T08:38:12.704Z"
+    },
+    {
+      "id": 4,
+      "user_id": 2,
+      "title": "🟣 New Task Assigned",
+      "message": "Complete Phase 4 HRMS Upgrade assigned by Dayflow Admin.",
+      "type": "task",
+      "is_read": true,
+      "read_status": true,
+      "created_at": "2026-08-22T08:38:12.704Z"
+    },
+    {
+      "id": 5,
+      "user_id": 3,
+      "title": "🟡 New Appraisal Available",
+      "message": "Your H1 2026 performance review rating (5/5 Stars) is available.",
+      "type": "appraisal",
+      "is_read": false,
+      "read_status": false,
+      "created_at": "2026-08-22T08:38:12.704Z"
+    },
+    {
+      "id": 6,
+      "user_id": 4,
+      "title": "📢 New Announcement: Q3 Townhall",
+      "message": "Join us on Friday at 3 PM EST for company updates & roadmap reveals.",
+      "type": "announcement",
+      "is_read": false,
+      "read_status": false,
+      "created_at": "2026-08-22T08:38:12.704Z"
+    },
+    {
+      "id": 7,
       "user_id": 2,
       "title": "🟢 Leave Approved",
       "message": "Your leave request from Aug 20 to Aug 22 was approved.",
       "type": "leave",
       "is_read": true,
       "read_status": true,
-      "created_at": "2026-08-22T08:33:31.404Z"
+      "created_at": "2026-08-22T08:38:12.735Z"
     },
     {
-      "id": 3,
+      "id": 8,
       "user_id": 2,
       "title": "🟣 New Task Assigned",
       "message": "Website Security Audit assigned by Admin.",
       "type": "task",
       "is_read": true,
       "read_status": true,
-      "created_at": "2026-08-22T08:33:31.405Z"
+      "created_at": "2026-08-22T08:38:12.736Z"
     },
     {
-      "id": 4,
+      "id": 9,
       "user_id": 2,
       "title": "🟡 New Appraisal",
       "message": "Your Q3 performance review is available.",
       "type": "appraisal",
       "is_read": true,
       "read_status": true,
-      "created_at": "2026-08-22T08:33:31.406Z"
+      "created_at": "2026-08-22T08:38:12.737Z"
     }
   ],
   "audit_logs": []

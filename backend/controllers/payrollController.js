@@ -1,17 +1,24 @@
 const db = require('../config/db');
+const { createNotification } = require('./notificationController');
 
 // @desc    Get employee personal payroll slips
 // @route   GET /api/payroll/my
 // @access  Private (Employee)
 const getMyPayroll = async (req, res) => {
   try {
-    if (!req.employee) {
-      return res.status(400).json({ success: false, message: 'Employee profile record missing.' });
+    let empId = req.employee ? req.employee.id : null;
+    if (!empId && req.user) {
+      const emps = await db.query('SELECT id FROM employees WHERE user_id = ? OR LOWER(email) = LOWER(?)', [req.user.id, req.user.email]);
+      if (emps && emps.length > 0) empId = emps[0].id;
+    }
+
+    if (!empId) {
+      return res.json({ success: true, count: 0, payroll: [] });
     }
 
     const payroll = await db.query(
       'SELECT * FROM payroll WHERE employee_id = ? ORDER BY month DESC',
-      [req.employee.id]
+      [empId]
     );
 
     return res.json({ success: true, count: payroll.length, payroll });
@@ -65,6 +72,18 @@ const addPayroll = async (req, res) => {
     );
 
     const newId = result.insertId || result.id;
+
+    // Create notification for employee
+    const targetEmps = await db.query('SELECT user_id FROM employees WHERE id = ?', [employeeId]);
+    if (targetEmps && targetEmps.length > 0 && targetEmps[0].user_id) {
+      await createNotification({
+        userId: targetEmps[0].user_id,
+        title: '💵 Salary Generated',
+        message: `Your payslip for ${month} ($${net.toLocaleString()}) is available for download.`,
+        type: 'payroll'
+      });
+    }
+
     const added = await db.query('SELECT * FROM payroll WHERE id = ?', [newId]);
 
     return res.status(201).json({

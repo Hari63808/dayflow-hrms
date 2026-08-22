@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { createNotification } = require('./notificationController');
 
 // @desc    Get all tasks for Admin / HR
 // @route   GET /api/tasks
@@ -49,7 +50,6 @@ const getMyTasks = async (req, res) => {
     }
 
     if (!empId) {
-      // Return HTTP 200 with empty task list instead of 404 error
       return res.json({ success: true, count: 0, tasks: [] });
     }
 
@@ -89,10 +89,12 @@ const addTask = async (req, res) => {
     // Create notification for assigned employee
     const targetEmps = await db.query('SELECT user_id FROM employees WHERE id = ?', [empId]);
     if (targetEmps && targetEmps.length > 0 && targetEmps[0].user_id) {
-      await db.query(
-        'INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)',
-        [targetEmps[0].user_id, 'New Task Assigned', `You have been assigned task: "${title}"`, 'info']
-      );
+      await createNotification({
+        userId: targetEmps[0].user_id,
+        title: '🟣 New Task Assigned',
+        message: `Task "${title}" assigned by Admin. Priority: ${priority || 'Medium'}.`,
+        type: 'task'
+      });
     }
 
     return res.status(201).json({
@@ -118,8 +120,22 @@ const updateTaskStatus = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Valid status ("Pending", "In Progress", "Completed") is required.' });
     }
 
+    const existingTasks = await db.query('SELECT * FROM tasks WHERE id = ?', [id]);
+    const task = existingTasks[0];
+
     await db.query('UPDATE tasks SET status = ? WHERE id = ?', [status, id]);
     const updated = await db.query('SELECT * FROM tasks WHERE id = ?', [id]);
+
+    // Create notification for assigner/admin if completed or status updated
+    if (task) {
+      const isCompleted = status === 'Completed';
+      await createNotification({
+        userId: 1, // Admin notification
+        title: isCompleted ? '✅ Task Completed' : '🟣 Task Status Changed',
+        message: `Task "${task.title}" status changed to ${status}.`,
+        type: 'task'
+      });
+    }
 
     return res.json({
       success: true,

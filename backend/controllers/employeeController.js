@@ -1,50 +1,70 @@
 const db = require('../config/db');
-const bcrypt = require('bcryptjs');
+const { createNotification } = require('./notificationController');
 
 // @desc    Get logged in employee profile
 // @route   GET /api/employees/profile
 // @access  Private
 const getProfile = async (req, res) => {
   try {
-    const employees = await db.query('SELECT * FROM employees WHERE user_id = ?', [req.user.id]);
-    if (!employees || employees.length === 0) {
-      return res.status(404).json({ success: false, message: 'Employee profile not found.' });
+    let emp = req.employee;
+    if (!emp && req.user) {
+      const emps = await db.query('SELECT * FROM employees WHERE user_id = ? OR LOWER(email) = LOWER(?)', [req.user.id, req.user.email]);
+      if (emps && emps.length > 0) emp = emps[0];
     }
-    return res.json({ success: true, employee: employees[0] });
+
+    if (!emp) {
+      return res.status(404).json({ success: false, message: 'Employee profile record not found.' });
+    }
+
+    return res.json({ success: true, employee: emp });
   } catch (error) {
     console.error('getProfile Error:', error);
-    return res.status(500).json({ success: false, message: 'Error retrieving profile.' });
+    return res.status(500).json({ success: false, message: 'Failed to retrieve profile details.' });
   }
 };
 
-// @desc    Update employee profile (phone and address)
+// @desc    Update employee profile (Phone & Address)
 // @route   PUT /api/employees/profile
 // @access  Private
 const updateProfile = async (req, res) => {
   try {
     const { phone, address } = req.body;
     let empId = req.employee ? req.employee.id : null;
-    if (!empId && req.user) {
-      const emps = await db.query('SELECT id FROM employees WHERE user_id = ? OR LOWER(email) = LOWER(?)', [req.user.id, req.user.email]);
+    let userId = req.user ? req.user.id : null;
+
+    if (!empId && userId) {
+      const emps = await db.query('SELECT id FROM employees WHERE user_id = ? OR LOWER(email) = LOWER(?)', [userId, req.user.email]);
       if (emps && emps.length > 0) empId = emps[0].id;
     }
 
     if (!empId) {
-      return res.status(404).json({ success: false, message: 'Employee profile record missing.' });
+      return res.status(404).json({ success: false, message: 'Employee profile missing.' });
     }
 
-    await db.query('UPDATE employees SET phone = ?, address = ? WHERE id = ?', [phone || '', address || '', empId]);
+    await db.query(
+      'UPDATE employees SET phone = ?, address = ? WHERE id = ?',
+      [phone || '', address || '', empId]
+    );
 
     const updated = await db.query('SELECT * FROM employees WHERE id = ?', [empId]);
 
+    if (userId) {
+      await createNotification({
+        userId,
+        title: '👤 Profile Details Updated',
+        message: 'Your personal information and contact numbers were updated.',
+        type: 'profile'
+      });
+    }
+
     return res.json({
       success: true,
-      message: 'Profile updated successfully!',
+      message: 'Profile information updated successfully!',
       employee: updated[0]
     });
   } catch (error) {
     console.error('updateProfile Error:', error);
-    return res.status(500).json({ success: false, message: 'Failed to update profile.' });
+    return res.status(500).json({ success: false, message: 'Failed to update profile information.' });
   }
 };
 
@@ -56,8 +76,6 @@ const uploadAvatar = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'No image file uploaded.' });
     }
-
-    console.log("FILE:", req.file);
 
     const host = req.get('host') || 'localhost:5000';
     const protocol = req.protocol || 'http';
@@ -76,8 +94,6 @@ const uploadAvatar = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Employee profile missing.' });
     }
 
-    console.log("EMPLOYEE BEFORE:", req.employee?.avatar_url);
-
     await db.query('UPDATE employees SET avatar_url = ? WHERE id = ?', [avatarUrl, empId]);
     if (userId) {
       await db.query('UPDATE employees SET avatar_url = ? WHERE user_id = ?', [avatarUrl, userId]);
@@ -86,27 +102,33 @@ const uploadAvatar = async (req, res) => {
     const updated = await db.query('SELECT * FROM employees WHERE id = ?', [empId]);
     const updatedEmployee = updated[0] || { ...req.employee, avatar_url: avatarUrl };
 
-    console.log("EMPLOYEE AFTER:", updatedEmployee.avatar_url);
-    console.log("RETURNING API AVATAR URL:", avatarUrl);
+    if (userId) {
+      await createNotification({
+        userId,
+        title: '👤 Profile Picture Updated',
+        message: 'Your new avatar image has been uploaded successfully.',
+        type: 'profile'
+      });
+    }
 
     return res.json({
       success: true,
       message: 'Profile picture uploaded successfully!',
-      avatar_url: avatarUrl,
+      avatarUrl: updatedEmployee.avatar_url,
       employee: updatedEmployee
     });
   } catch (error) {
-    console.error('uploadAvatar Error:', error);
-    return res.status(500).json({ success: false, message: 'Failed to upload profile picture.' });
+    console.error('uploadAvatar Controller Error:', error);
+    return res.status(500).json({ success: false, message: 'Server error uploading profile picture.' });
   }
 };
 
-// @desc    Get all employees (Admin directory)
+// @desc    Get all employees (Admin)
 // @route   GET /api/employees
 // @access  Private (Admin)
 const getAllEmployees = async (req, res) => {
   try {
-    const employees = await db.query('SELECT * FROM employees');
+    const employees = await db.query('SELECT * FROM employees ORDER BY created_at DESC');
     return res.json({ success: true, count: employees.length, employees });
   } catch (error) {
     console.error('getAllEmployees Error:', error);
@@ -119,36 +141,31 @@ const getAllEmployees = async (req, res) => {
 // @access  Private (Admin)
 const addEmployee = async (req, res) => {
   try {
-    const { email, password, firstName, lastName, phone, address, department, designation, joiningDate, role } = req.body;
+    const { firstName, lastName, email, phone, address, department, designation, joiningDate, role } = req.body;
 
-    if (!email || !password || !firstName || !lastName) {
-      return res.status(400).json({ success: false, message: 'Required fields missing (email, password, firstName, lastName).' });
+    if (!firstName || !lastName || !email) {
+      return res.status(400).json({ success: false, message: 'First name, last name, and email are required.' });
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ success: false, message: 'Please provide a valid email address.' });
+    const cleanEmail = email.trim().toLowerCase();
+
+    // Check if user already exists
+    const existing = await db.query('SELECT * FROM users WHERE email = ?', [cleanEmail]);
+    if (existing && existing.length > 0) {
+      return res.status(400).json({ success: false, message: 'An account with this email already exists.' });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters long.' });
-    }
-
-    const existingUsers = await db.query('SELECT * FROM users WHERE email = ?', [email]);
-    if (existingUsers && existingUsers.length > 0) {
-      return res.status(400).json({ success: false, message: 'User email already exists.' });
-    }
-
+    const bcrypt = require('bcryptjs');
     const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(password, salt);
+    const passwordHash = await bcrypt.hash('password123', salt);
     const userRole = role === 'admin' ? 'admin' : 'employee';
 
-    const userRes = await db.query(
+    const userResult = await db.query(
       'INSERT INTO users (email, password_hash, role) VALUES (?, ?, ?)',
-      [email, passwordHash, userRole]
+      [cleanEmail, passwordHash, userRole]
     );
 
-    const userId = userRes.insertId;
+    const userId = userResult.insertId;
     const defaultAvatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(firstName + ' ' + lastName)}`;
 
     await db.query(
@@ -159,22 +176,29 @@ const addEmployee = async (req, res) => {
         userId,
         firstName,
         lastName,
-        email,
+        cleanEmail,
         phone || '',
         address || '',
-        department || 'General',
+        department || 'Engineering',
         designation || 'Team Member',
         joiningDate || new Date().toISOString().split('T')[0],
         defaultAvatar
       ]
     );
 
-    const newEmps = await db.query('SELECT * FROM employees WHERE user_id = ?', [userId]);
+    const newEmp = await db.query('SELECT * FROM employees WHERE user_id = ?', [userId]);
+
+    await createNotification({
+      userId,
+      title: 'Welcome to Dayflow HRMS!',
+      message: 'Your employee account has been created. Log in using your email.',
+      type: 'info'
+    });
 
     return res.status(201).json({
       success: true,
-      message: 'Employee added successfully!',
-      employee: newEmps[0]
+      message: 'Employee record created successfully!',
+      employee: newEmp[0]
     });
   } catch (error) {
     console.error('addEmployee Error:', error);
@@ -201,6 +225,15 @@ const updateEmployee = async (req, res) => {
     );
 
     const updated = await db.query('SELECT * FROM employees WHERE id = ?', [id]);
+
+    if (existing[0].user_id) {
+      await createNotification({
+        userId: existing[0].user_id,
+        title: '👤 Profile Details Updated',
+        message: 'Your department or designation details were updated by HR Admin.',
+        type: 'profile'
+      });
+    }
 
     return res.json({
       success: true,
