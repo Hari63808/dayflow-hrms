@@ -93,8 +93,8 @@ const query = async (sql, params = []) => {
       const [rows] = await pool.execute(sql, params);
       return rows;
     } catch (error) {
-      console.error('MySQL Query Error:', error.message);
-      throw error;
+      console.warn('⚠️ MySQL Query error, falling back to mock store mode:', error.message);
+      isMockMode = true;
     }
   }
   return executeMockQuery(sql, params);
@@ -364,10 +364,15 @@ const executeMockQuery = (sql, params) => {
     return { insertId: newId };
   }
   if (upperSql.includes('UPDATE EMPLOYEES SET') && upperSql.includes('WHERE ID')) {
-    const id = params[params.length - 1];
-    const emp = mockStore.employees.find(e => e.id === Number(id));
+    const id = Number(params[params.length - 1]);
+    const emp = mockStore.employees.find(e => e.id === id);
     if (emp) {
-      if (params.length >= 6) {
+      if (upperSql.includes('AVATAR_URL = ?')) {
+        emp.avatar_url = params[0];
+      } else if (upperSql.includes('PHONE = ?') && upperSql.includes('ADDRESS = ?') && !upperSql.includes('FIRST_NAME')) {
+        emp.phone = params[0] || '';
+        emp.address = params[1] || '';
+      } else {
         emp.first_name = params[0];
         emp.last_name = params[1];
         emp.phone = params[2];
