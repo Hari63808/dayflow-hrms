@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { getAvatarUrl } from '../utils/avatarUtils';
 import { 
   LayoutDashboard, 
   Clock, 
@@ -105,6 +106,8 @@ const Sidebar = () => {
       icon: UserCircle
     }
   ];
+
+  const avatarSrc = getAvatarUrl(user?.employee?.avatar_url, user?.employee?.first_name || user?.email);
 
   return (
     <aside style={{
@@ -219,7 +222,7 @@ const Sidebar = () => {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', padding: '0.25rem 0.5rem' }}>
           <img
-            src={user?.employee?.avatar_url ?? `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email ?? 'user'}`}
+            src={avatarSrc}
             alt="Avatar"
             style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--primary)' }}
           />

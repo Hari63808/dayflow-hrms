@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { dashboardService } from '../services/dashboardService';
 import { attendanceService } from '../services/attendanceService';
+import { getAvatarUrl } from '../utils/avatarUtils';
 import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
 import Loader from '../components/Loader';
@@ -99,6 +100,7 @@ const EmployeeDashboard = () => {
   const isCheckedOut = !!todayRecord?.check_out;
   const salary = stats?.salarySummary ?? null;
   const recentAttendance = stats?.recentAttendance ?? [];
+  const avatarSrc = getAvatarUrl(user?.employee?.avatar_url, user?.employee?.first_name || user?.email);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -117,7 +119,7 @@ const EmployeeDashboard = () => {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
           <img
-            src={user?.employee?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email ?? 'employee'}`}
+            src={avatarSrc}
             alt="Profile Avatar"
             style={{
               width: '80px',

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { employeeService } from '../services/employeeService';
+import { getAvatarUrl } from '../utils/avatarUtils';
 import Loader from '../components/Loader';
 import Toast from '../components/Toast';
 import { User, Mail, Phone, MapPin, Building, Briefcase, Camera, Save } from 'lucide-react';
@@ -62,10 +63,11 @@ const ProfilePage = () => {
     setUploading(true);
     try {
       const res = await employeeService.uploadAvatar(formData);
-      if (res?.success) {
+      if (res?.success && res?.employee) {
         setToast({ message: res.message ?? 'Avatar updated successfully.', type: 'success' });
         setProfile(res.employee);
         updateUser({ employee: res.employee });
+        console.log("Updated employee avatar_url:", res.employee.avatar_url);
       }
     } catch (err) {
       setToast({ message: err.response?.data?.message ?? 'Avatar upload failed.', type: 'error' });
@@ -77,6 +79,7 @@ const ProfilePage = () => {
   if (loading) return <Loader message="Loading profile settings..." />;
 
   const safeProfile = profile ?? user?.employee ?? {};
+  const avatarSrc = getAvatarUrl(safeProfile?.avatar_url, safeProfile?.first_name || user?.email);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', maxWidth: '1000px', margin: '0 auto' }}>
@@ -87,7 +90,7 @@ const ProfilePage = () => {
         {/* Avatar Uploader Wrapper */}
         <div style={{ position: 'relative' }}>
           <img
-            src={safeProfile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email ?? 'user'}`}
+            src={avatarSrc}
             alt="Profile Avatar"
             style={{
               width: '120px',
