@@ -6,7 +6,7 @@ import Modal from '../components/Modal';
 import Loader from '../components/Loader';
 import Toast from '../components/Toast';
 import StatusBadge from '../components/StatusBadge';
-import { CheckSquare, Plus, Calendar, Clock, AlertTriangle } from 'lucide-react';
+import { CheckSquare, Plus, Calendar, User, Clock, AlertTriangle } from 'lucide-react';
 
 const TasksPage = () => {
   const { isAdmin } = useAuth();
@@ -16,7 +16,13 @@ const TasksPage = () => {
   const [toast, setToast] = useState(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [form, setForm] = useState({ title: '', description: '', assignedTo: '', dueDate: '', priority: 'Medium' });
+  const [form, setForm] = useState({
+    title: '',
+    description: '',
+    assignedTo: '',
+    dueDate: new Date().toISOString().split('T')[0],
+    priority: 'Medium'
+  });
   const [submitting, setSubmitting] = useState(false);
 
   const fetchTasksData = async () => {
@@ -26,7 +32,13 @@ const TasksPage = () => {
         isAdmin ? employeeService.getAllEmployees() : Promise.resolve({ success: false })
       ]);
       if (resT?.success) setTasks(resT.tasks ?? []);
-      if (resE?.success) setEmployees(resE.employees ?? []);
+      if (resE?.success) {
+        const emps = resE.employees ?? [];
+        setEmployees(emps);
+        if (emps.length > 0 && !form.assignedTo) {
+          setForm(prev => ({ ...prev, assignedTo: emps[0].id }));
+        }
+      }
     } catch (err) {
       console.error('Failed to load tasks:', err);
     } finally {
@@ -38,37 +50,58 @@ const TasksPage = () => {
     fetchTasksData();
   }, [isAdmin]);
 
+  const handleOpenModal = () => {
+    setForm({
+      title: '',
+      description: '',
+      assignedTo: employees.length > 0 ? employees[0].id : '',
+      dueDate: new Date().toISOString().split('T')[0],
+      priority: 'Medium'
+    });
+    setIsModalOpen(true);
+  };
+
   const handleUpdateStatus = async (id, status) => {
     try {
       const res = await taskService.updateTaskStatus(id, status);
       if (res?.success) {
-        setToast({ message: 'Task status updated!', type: 'success' });
+        setToast({ message: res.message ?? 'Task status updated!', type: 'success' });
         fetchTasksData();
       }
     } catch (err) {
-      setToast({ message: 'Failed to update task.', type: 'error' });
+      setToast({ message: 'Failed to update task status.', type: 'error' });
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!form.assignedTo) {
+      setToast({ message: 'Please select an employee to assign the task.', type: 'error' });
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await taskService.addTask(form);
       if (res?.success) {
         setToast({ message: 'Task assigned successfully!', type: 'success' });
         setIsModalOpen(false);
-        setForm({ title: '', description: '', assignedTo: '', dueDate: '', priority: 'Medium' });
+        setForm({
+          title: '',
+          description: '',
+          assignedTo: employees.length > 0 ? employees[0].id : '',
+          dueDate: new Date().toISOString().split('T')[0],
+          priority: 'Medium'
+        });
         fetchTasksData();
       }
     } catch (err) {
-      setToast({ message: 'Failed to assign task.', type: 'error' });
+      setToast({ message: err.response?.data?.message ?? 'Failed to assign task.', type: 'error' });
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading) return <Loader message="Loading tasks and deliverables..." />;
+  if (loading) return <Loader message="Loading workplace deliverables & tasks..." />;
 
   const safeTasks = tasks ?? [];
   const safeEmps = employees ?? [];
@@ -89,7 +122,7 @@ const TasksPage = () => {
         </div>
 
         {isAdmin && (
-          <button onClick={() => setIsModalOpen(true)} className="btn btn-primary">
+          <button onClick={handleOpenModal} className="btn btn-primary">
             <Plus size={18} />
             <span>Assign New Task</span>
           </button>
@@ -105,10 +138,11 @@ const TasksPage = () => {
               <thead>
                 <tr>
                   <th>Task Title</th>
+                  {isAdmin && <th>Assigned To</th>}
                   <th>Priority</th>
                   <th>Due Date</th>
                   <th>Status</th>
-                  <th>Action</th>
+                  <th>Action / Status Update</th>
                 </tr>
               </thead>
               <tbody>
@@ -118,17 +152,30 @@ const TasksPage = () => {
                       <div style={{ fontWeight: 700 }}>{t?.title}</div>
                       <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t?.description || 'No description'}</div>
                     </td>
+                    {isAdmin && (
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 600 }}>
+                          <User size={14} color="var(--primary)" />
+                          <span>{t?.first_name ? `${t.first_name} ${t.last_name || ''}` : `Employee #${t?.assigned_to}`}</span>
+                        </div>
+                      </td>
+                    )}
                     <td>
-                      <span className={`badge ${t?.priority === 'High' ? 'badge-danger' : 'badge-info'}`}>
+                      <span className={`badge ${t?.priority === 'High' ? 'badge-danger' : t?.priority === 'Low' ? 'badge-info' : 'badge-warning'}`}>
                         {t?.priority ?? 'Medium'}
                       </span>
                     </td>
-                    <td>{t?.due_date}</td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.85rem' }}>
+                        <Calendar size={14} color="var(--text-muted)" />
+                        <span>{t?.due_date}</span>
+                      </div>
+                    </td>
                     <td><StatusBadge status={t?.status ?? 'Pending'} /></td>
                     <td>
                       <select
                         className="form-select"
-                        style={{ padding: '0.35rem 0.5rem', fontSize: '0.8rem', width: '130px' }}
+                        style={{ padding: '0.35rem 0.5rem', fontSize: '0.8rem', width: '140px' }}
                         value={t?.status ?? 'Pending'}
                         onChange={(e) => handleUpdateStatus(t.id, e.target.value)}
                       >
@@ -145,6 +192,7 @@ const TasksPage = () => {
         )}
       </div>
 
+      {/* Modal for Assigning New Task */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Assign New Workplace Task">
         <form onSubmit={handleSubmit}>
           <div className="form-group">
@@ -154,7 +202,6 @@ const TasksPage = () => {
           <div className="form-group">
             <label className="form-label">Assign To Employee</label>
             <select className="form-select" value={form.assignedTo} onChange={(e) => setForm({ ...form, assignedTo: e.target.value })} required>
-              <option value="">Select Employee...</option>
               {safeEmps.map(e => (
                 <option key={e?.id} value={e?.id}>{e?.first_name} {e?.last_name} ({e?.department})</option>
               ))}

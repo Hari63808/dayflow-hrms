@@ -52,7 +52,9 @@ const mockStore = {
   notifications: [
     { id: 1, user_id: 2, title: 'Shift Clocked In', message: 'You clocked in successfully at 09:02 AM.', type: 'success', is_read: false, created_at: new Date() }
   ],
-  tasks: [],
+  tasks: [
+    { id: 1, title: 'Complete Phase 4 HRMS Upgrade', description: 'Implement RBAC, tasks, and document vault.', assigned_to: 2, assigned_by: 1, due_date: '2026-08-25', priority: 'High', status: 'In Progress', created_at: new Date() }
+  ],
   performance_reviews: [],
   documents: [],
   audit_logs: [
@@ -209,6 +211,56 @@ const executeMockQuery = (sql, params) => {
     return mockStore.employees;
   }
 
+  // --- TASKS MUTATIONS & QUERIES ---
+  if (upperSql.includes('INSERT INTO TASKS')) {
+    const newId = mockStore.tasks.length + 1;
+    const newT = {
+      id: newId,
+      title: params[0],
+      description: params[1] || '',
+      assigned_to: Number(params[2]),
+      assigned_by: Number(params[3] || 1),
+      due_date: params[4],
+      priority: params[5] || 'Medium',
+      status: 'Pending',
+      created_at: new Date()
+    };
+    mockStore.tasks.push(newT);
+    return { insertId: newId };
+  }
+  if (upperSql.includes('UPDATE TASKS SET STATUS')) {
+    const status = params[0];
+    const id = Number(params[1]);
+    const t = mockStore.tasks.find(task => task.id === id);
+    if (t) {
+      t.status = status;
+    }
+    return { affectedRows: 1 };
+  }
+  if (upperSql.includes('FROM TASKS') && upperSql.includes('WHERE ID = ?')) {
+    const t = mockStore.tasks.find(task => task.id === Number(params[0]));
+    if (t) {
+      const emp = mockStore.employees.find(e => e.id === t.assigned_to);
+      return [{ ...t, first_name: emp?.first_name ?? 'Employee', last_name: emp?.last_name ?? '' }];
+    }
+    return [];
+  }
+  if (upperSql.includes('FROM TASKS') && upperSql.includes('WHERE ASSIGNED_TO = ?')) {
+    const empId = Number(params[0]);
+    return mockStore.tasks
+      .filter(t => t.assigned_to === empId)
+      .map(t => {
+        const emp = mockStore.employees.find(e => e.id === t.assigned_to);
+        return { ...t, first_name: emp?.first_name ?? 'Employee', last_name: emp?.last_name ?? '' };
+      });
+  }
+  if (upperSql.includes('FROM TASKS')) {
+    return mockStore.tasks.map(t => {
+      const emp = mockStore.employees.find(e => e.id === t.assigned_to);
+      return { ...t, first_name: emp?.first_name ?? 'Employee', last_name: emp?.last_name ?? '' };
+    });
+  }
+
   // --- LEAVE_REQUESTS MUTATIONS & QUERIES ---
   if (upperSql.includes('INSERT INTO LEAVE_REQUESTS')) {
     const newId = mockStore.leave_requests.length + 1;
@@ -345,7 +397,6 @@ const executeMockQuery = (sql, params) => {
   if (upperSql.includes('FROM HOLIDAYS')) return mockStore.holidays;
   if (upperSql.includes('FROM ANNOUNCEMENTS')) return mockStore.announcements;
   if (upperSql.includes('FROM NOTIFICATIONS')) return mockStore.notifications.filter(n => n.user_id === Number(params[0]));
-  if (upperSql.includes('FROM TASKS')) return mockStore.tasks;
   if (upperSql.includes('FROM PERFORMANCE_REVIEWS')) return mockStore.performance_reviews;
   if (upperSql.includes('FROM DOCUMENTS')) return mockStore.documents;
   if (upperSql.includes('FROM AUDIT_LOGS')) return mockStore.audit_logs;
