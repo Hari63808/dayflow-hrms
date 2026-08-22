@@ -28,7 +28,7 @@ CREATE TABLE employees (
     last_name VARCHAR(100) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
     phone VARCHAR(20) DEFAULT '',
-    address TEXT,
+    address TEXT NOT NULL,
     department VARCHAR(100) DEFAULT 'General',
     designation VARCHAR(100) DEFAULT 'Team Member',
     joining_date DATE NOT NULL,
