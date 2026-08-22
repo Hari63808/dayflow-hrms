@@ -49,7 +49,8 @@ const getMyTasks = async (req, res) => {
     }
 
     if (!empId) {
-      return res.status(404).json({ success: false, message: 'Employee record not found.' });
+      // Return HTTP 200 with empty task list instead of 404 error
+      return res.json({ success: true, count: 0, tasks: [] });
     }
 
     const tasks = await db.query(
