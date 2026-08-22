@@ -33,6 +33,7 @@ const reviewRoutes = require('./routes/reviewRoutes');
 const documentRoutes = require('./routes/documentRoutes');
 const correctionRoutes = require('./routes/correctionRoutes');
 const reportRoutes = require('./routes/reportRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 
 // API Routes Mounting
 app.use('/api/auth', authRoutes);
@@ -52,13 +53,15 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/corrections', correctionRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Root & Health Check Endpoint
 app.get('/', (req, res) => {
   res.json({
     status: 'online',
     app: 'Dayflow HRMS Enterprise Backend API',
-    version: '4.0.0',
+    version: '4.1.0',
+    aiEnabled: true,
     timestamp: new Date()
   });
 });
@@ -81,5 +84,5 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`🚀 Dayflow HRMS Enterprise Backend Server running on port ${PORT}`);
-  console.log(`🔗 Health Check: http://localhost:${PORT}/`);
+  console.log(`🤖 AI Chatbot Endpoint Ready: http://localhost:${PORT}/api/ai/chat`);
 });
