@@ -24,8 +24,6 @@ import {
   ResponsiveContainer, 
   AreaChart, 
   Area, 
-  BarChart, 
-  Bar, 
   PieChart, 
   Pie, 
   Cell, 
@@ -51,8 +49,8 @@ const AdminDashboard = () => {
     setError(null);
     try {
       const res = await dashboardService.getAdminStats();
-      if (res.success) {
-        setStats(res.stats);
+      if (res?.success) {
+        setStats(res.stats ?? {});
         setLastUpdated(new Date());
         if (isManual) {
           setToast({ message: 'Dashboard updated with real-time data.', type: 'success' });
@@ -62,7 +60,7 @@ const AdminDashboard = () => {
       }
     } catch (err) {
       console.error('Error fetching admin dashboard stats:', err);
-      setError(err.response?.data?.message || 'Server connection error. Failed to load metrics.');
+      setError(err.response?.data?.message ?? 'Server connection error. Failed to load metrics.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -81,6 +79,10 @@ const AdminDashboard = () => {
   }, []);
 
   if (loading) return <Loader message="Connecting to Dayflow database & generating analytics..." />;
+
+  const recentActivities = stats?.recentActivities ?? [];
+  const attendanceAnalytics = stats?.attendanceAnalytics ?? [];
+  const leaveAnalytics = stats?.leaveAnalytics ?? [];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -162,42 +164,42 @@ const AdminDashboard = () => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
         <StatCard
           title="Total Employees"
-          value={stats?.totalEmployees || 0}
+          value={stats?.totalEmployees ?? 0}
           subtext="Active staff profiles"
           icon={Users}
           color="#6366f1"
         />
         <StatCard
           title="Present Today"
-          value={stats?.presentToday || 0}
+          value={stats?.presentToday ?? 0}
           subtext="Verified shift clock-ins"
           icon={UserCheck}
           color="#10b981"
         />
         <StatCard
           title="Absent Today"
-          value={stats?.absentToday || 0}
+          value={stats?.absentToday ?? 0}
           subtext="Unaccounted or absent"
           icon={UserX}
           color="#f43f5e"
         />
         <StatCard
           title="Pending Leaves"
-          value={stats?.pendingLeaves || 0}
+          value={stats?.pendingLeaves ?? 0}
           subtext="Queue awaiting review"
           icon={CalendarDays}
           color="#f59e0b"
         />
         <StatCard
           title="Approved Leaves"
-          value={stats?.approvedLeaves || 0}
+          value={stats?.approvedLeaves ?? 0}
           subtext="Granted leave days"
           icon={CheckCircle2}
           color="#06b6d4"
         />
         <StatCard
           title="Monthly Payroll"
-          value={`$${(stats?.monthlyPayrollTotal || 0).toLocaleString()}`}
+          value={`$${(parseFloat(stats?.monthlyPayrollTotal ?? 0) || 0).toLocaleString()}`}
           subtext="Total net compensation"
           icon={CircleDollarSign}
           color="#8b5cf6"
@@ -218,7 +220,7 @@ const AdminDashboard = () => {
 
           <div style={{ width: '100%', height: '300px' }}>
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={stats?.attendanceAnalytics || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <AreaChart data={attendanceAnalytics} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorPresent" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
@@ -254,7 +256,7 @@ const AdminDashboard = () => {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={stats?.leaveAnalytics || []}
+                  data={leaveAnalytics}
                   cx="50%"
                   cy="50%"
                   innerRadius={55}
@@ -262,7 +264,7 @@ const AdminDashboard = () => {
                   paddingAngle={5}
                   dataKey="count"
                 >
-                  {(stats?.leaveAnalytics || []).map((entry, index) => (
+                  {leaveAnalytics.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
@@ -292,7 +294,7 @@ const AdminDashboard = () => {
           </Link>
         </div>
 
-        {(!stats?.recentActivities || stats.recentActivities.length === 0) ? (
+        {recentActivities.length === 0 ? (
           <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
             No recent workforce activities recorded.
           </div>
@@ -309,22 +311,27 @@ const AdminDashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {stats.recentActivities.map((act, idx) => (
-                  <tr key={idx}>
-                    <td>
-                      <span className={`badge ${act.activity_type === 'leave' ? 'badge-warning' : 'badge-info'}`}>
-                        {act.activity_type === 'leave' ? <CalendarDays size={13} /> : <Clock size={13} />}
-                        {act.activity_type.toUpperCase()}
-                      </span>
-                    </td>
-                    <td style={{ fontWeight: 600 }}>{act.first_name} {act.last_name}</td>
-                    <td style={{ fontSize: '0.875rem' }}>{act.detail || 'Clock-in log'}</td>
-                    <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                      {new Date(act.created_at).toLocaleString()}
-                    </td>
-                    <td><StatusBadge status={act.status} /></td>
-                  </tr>
-                ))}
+                {recentActivities.map((act, idx) => {
+                  const activityType = (act?.activity_type ?? 'activity').toString();
+                  const isLeave = activityType.toLowerCase() === 'leave';
+
+                  return (
+                    <tr key={idx}>
+                      <td>
+                        <span className={`badge ${isLeave ? 'badge-warning' : 'badge-info'}`}>
+                          {isLeave ? <CalendarDays size={13} /> : <Clock size={13} />}
+                          {activityType.toUpperCase()}
+                        </span>
+                      </td>
+                      <td style={{ fontWeight: 600 }}>{act?.first_name ?? 'Employee'} {act?.last_name ?? ''}</td>
+                      <td style={{ fontSize: '0.875rem' }}>{act?.detail ?? 'Clock-in log'}</td>
+                      <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        {new Date(act?.created_at ?? Date.now()).toLocaleString()}
+                      </td>
+                      <td><StatusBadge status={act?.status ?? 'Pending'} /></td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

@@ -3,7 +3,7 @@ import { employeeService } from '../services/employeeService';
 import Modal from '../components/Modal';
 import Loader from '../components/Loader';
 import Toast from '../components/Toast';
-import { Users, UserPlus, Edit2, Trash2, Search, Mail, Phone, MapPin, Briefcase, Calendar } from 'lucide-react';
+import { Users, UserPlus, Edit2, Trash2, Search, Mail, Phone } from 'lucide-react';
 
 const EmployeesPage = () => {
   const [employees, setEmployees] = useState([]);
@@ -30,8 +30,8 @@ const EmployeesPage = () => {
   const fetchEmployees = async () => {
     try {
       const res = await employeeService.getAllEmployees();
-      if (res.success) {
-        setEmployees(res.employees);
+      if (res?.success) {
+        setEmployees(res.employees ?? []);
       }
     } catch (err) {
       console.error('Failed to load employee directory:', err);
@@ -62,18 +62,19 @@ const EmployeesPage = () => {
   };
 
   const handleOpenEditModal = (emp) => {
+    if (!emp) return;
     setEditId(emp.id);
     setForm({
-      firstName: emp.first_name,
-      lastName: emp.last_name,
-      email: emp.email,
-      password: '', // Leave blank unless changing
-      role: emp.role || 'employee',
-      phone: emp.phone || '',
-      address: emp.address || '',
-      department: emp.department || '',
-      designation: emp.designation || '',
-      joiningDate: emp.joining_date || new Date().toISOString().split('T')[0]
+      firstName: emp?.first_name ?? '',
+      lastName: emp?.last_name ?? '',
+      email: emp?.email ?? '',
+      password: '',
+      role: emp?.role ?? 'employee',
+      phone: emp?.phone ?? '',
+      address: emp?.address ?? '',
+      department: emp?.department ?? '',
+      designation: emp?.designation ?? '',
+      joiningDate: emp?.joining_date ?? new Date().toISOString().split('T')[0]
     });
     setIsModalOpen(true);
   };
@@ -82,8 +83,8 @@ const EmployeesPage = () => {
     if (!window.confirm('Are you sure you want to delete this employee? This will remove their user account!')) return;
     try {
       const res = await employeeService.deleteEmployee(id);
-      if (res.success) {
-        setToast({ message: res.message, type: 'success' });
+      if (res?.success) {
+        setToast({ message: res.message ?? 'Employee deleted.', type: 'success' });
         fetchEmployees();
       }
     } catch (err) {
@@ -96,24 +97,25 @@ const EmployeesPage = () => {
     try {
       if (editId) {
         const res = await employeeService.updateEmployee(editId, form);
-        if (res.success) setToast({ message: res.message, type: 'success' });
+        if (res?.success) setToast({ message: res.message ?? 'Employee updated.', type: 'success' });
       } else {
         const res = await employeeService.addEmployee(form);
-        if (res.success) setToast({ message: res.message, type: 'success' });
+        if (res?.success) setToast({ message: res.message ?? 'Employee created.', type: 'success' });
       }
       setIsModalOpen(false);
       fetchEmployees();
     } catch (err) {
-      setToast({ message: err.response?.data?.message || 'Failed to save employee.', type: 'error' });
+      setToast({ message: err.response?.data?.message ?? 'Failed to save employee.', type: 'error' });
     }
   };
 
-  const filteredEmployees = employees.filter(e => {
-    const term = searchTerm.toLowerCase();
-    const fullName = `${e.first_name} ${e.last_name}`.toLowerCase();
-    const email = (e.email || '').toLowerCase();
-    const dept = (e.department || '').toLowerCase();
-    const desig = (e.designation || '').toLowerCase();
+  const safeEmployees = employees ?? [];
+  const filteredEmployees = safeEmployees.filter(e => {
+    const term = (searchTerm ?? '').toLowerCase();
+    const fullName = `${e?.first_name ?? ''} ${e?.last_name ?? ''}`.toLowerCase();
+    const email = (e?.email ?? '').toLowerCase();
+    const dept = (e?.department ?? '').toLowerCase();
+    const desig = (e?.designation ?? '').toLowerCase();
     return fullName.includes(term) || email.includes(term) || dept.includes(term) || desig.includes(term);
   });
 
@@ -204,34 +206,34 @@ const EmployeesPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredEmployees.map((emp) => (
-                  <tr key={emp.id}>
+                {filteredEmployees.map((emp, idx) => (
+                  <tr key={emp?.id ?? idx}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <img
-                          src={emp.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${emp.email}`}
+                          src={emp?.avatar_url ?? `https://api.dicebear.com/7.x/avataaars/svg?seed=${emp?.email ?? 'user'}`}
                           alt="Avatar"
                           style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--border-color)' }}
                         />
                         <div>
                           <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>
-                            {emp.first_name} {emp.last_name}
+                            {emp?.first_name ?? 'Employee'} {emp?.last_name ?? ''}
                           </div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ID: #{emp.id}</div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ID: #{emp?.id ?? ''}</div>
                         </div>
                       </div>
                     </td>
                     <td>
                       <div style={{ fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><Mail size={13} color="var(--text-muted)" /> {emp.email}</span>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: 'var(--text-muted)' }}><Phone size={13} /> {emp.phone || 'N/A'}</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><Mail size={13} color="var(--text-muted)" /> {emp?.email ?? '—'}</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: 'var(--text-muted)' }}><Phone size={13} /> {emp?.phone || 'N/A'}</span>
                       </div>
                     </td>
                     <td>
-                      <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{emp.designation}</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--primary)' }}>{emp.department}</div>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{emp?.designation ?? 'Team Member'}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--primary)' }}>{emp?.department ?? 'General'}</div>
                     </td>
-                    <td style={{ fontSize: '0.85rem' }}>{emp.joining_date}</td>
+                    <td style={{ fontSize: '0.85rem' }}>{emp?.joining_date ?? '—'}</td>
                     <td>
                       <div style={{ display: 'flex', gap: '0.4rem' }}>
                         <button
@@ -242,7 +244,7 @@ const EmployeesPage = () => {
                           <Edit2 size={14} />
                         </button>
                         <button
-                          onClick={() => handleDelete(emp.id)}
+                          onClick={() => handleDelete(emp?.id)}
                           className="btn btn-danger btn-sm"
                           title="Delete Employee"
                         >

@@ -5,7 +5,7 @@ import StatusBadge from '../components/StatusBadge';
 import Modal from '../components/Modal';
 import Loader from '../components/Loader';
 import Toast from '../components/Toast';
-import { CalendarDays, Plus, Check, X, MessageSquare, AlertCircle } from 'lucide-react';
+import { CalendarDays, Plus, Check, X, MessageSquare } from 'lucide-react';
 
 const LeavePage = () => {
   const { isAdmin } = useAuth();
@@ -32,10 +32,10 @@ const LeavePage = () => {
     try {
       if (isAdmin) {
         const res = await leaveService.getAllLeaves();
-        if (res.success) setLeaves(res.leaves);
+        if (res?.success) setLeaves(res.leaves ?? []);
       } else {
         const res = await leaveService.getMyLeaves();
-        if (res.success) setLeaves(res.leaves);
+        if (res?.success) setLeaves(res.leaves ?? []);
       }
     } catch (err) {
       console.error('Failed to fetch leave requests:', err);
@@ -53,14 +53,14 @@ const LeavePage = () => {
     setSubmitting(true);
     try {
       const res = await leaveService.applyLeave(applyForm);
-      if (res.success) {
-        setToast({ message: res.message, type: 'success' });
+      if (res?.success) {
+        setToast({ message: res.message ?? 'Leave application submitted successfully!', type: 'success' });
         setIsApplyModalOpen(false);
         setApplyForm({ leaveType: 'Paid', startDate: '', endDate: '', reason: '' });
         fetchLeaves();
       }
     } catch (err) {
-      setToast({ message: err.response?.data?.message || 'Failed to submit leave request.', type: 'error' });
+      setToast({ message: err.response?.data?.message ?? 'Failed to submit leave request.', type: 'error' });
     } finally {
       setSubmitting(false);
     }
@@ -73,8 +73,8 @@ const LeavePage = () => {
         status,
         adminComment
       });
-      if (res.success) {
-        setToast({ message: res.message, type: 'success' });
+      if (res?.success) {
+        setToast({ message: res.message ?? `Leave request ${status.toLowerCase()}!`, type: 'success' });
         setReviewModalOpen(false);
         setSelectedLeave(null);
         setAdminComment('');
@@ -86,6 +86,8 @@ const LeavePage = () => {
   };
 
   if (loading) return <Loader message="Loading leave management queue..." />;
+
+  const safeLeaves = leaves ?? [];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -131,7 +133,7 @@ const LeavePage = () => {
 
       {/* Leave Requests Table */}
       <div className="glass-card" style={{ padding: '1.75rem' }}>
-        {leaves.length === 0 ? (
+        {safeLeaves.length === 0 ? (
           <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
             No leave applications found.
           </div>
@@ -151,21 +153,21 @@ const LeavePage = () => {
                 </tr>
               </thead>
               <tbody>
-                {leaves.map((leave) => (
-                  <tr key={leave.id}>
+                {safeLeaves.map((leave, idx) => (
+                  <tr key={leave?.id ?? idx}>
                     {isAdmin && (
                       <td>
-                        <div style={{ fontWeight: 600 }}>{leave.first_name} {leave.last_name}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{leave.department}</div>
+                        <div style={{ fontWeight: 600 }}>{leave?.first_name ?? 'Employee'} {leave?.last_name ?? ''}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{leave?.department ?? 'General'}</div>
                       </td>
                     )}
-                    <td><span style={{ fontWeight: 600 }}>{leave.leave_type}</span></td>
-                    <td>{leave.start_date}</td>
-                    <td>{leave.end_date}</td>
-                    <td style={{ maxWidth: '250px' }}>{leave.reason}</td>
-                    <td><StatusBadge status={leave.status} /></td>
+                    <td><span style={{ fontWeight: 600 }}>{leave?.leave_type ?? 'Paid'}</span></td>
+                    <td>{leave?.start_date ?? '—'}</td>
+                    <td>{leave?.end_date ?? '—'}</td>
+                    <td style={{ maxWidth: '250px' }}>{leave?.reason ?? '—'}</td>
+                    <td><StatusBadge status={leave?.status ?? 'Pending'} /></td>
                     <td>
-                      {leave.admin_comment ? (
+                      {leave?.admin_comment ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.825rem', color: 'var(--text-muted)' }}>
                           <MessageSquare size={14} color="var(--primary)" />
                           <span>{leave.admin_comment}</span>
@@ -176,7 +178,7 @@ const LeavePage = () => {
                     </td>
                     {isAdmin && (
                       <td>
-                        {leave.status === 'Pending' ? (
+                        {(leave?.status ?? 'Pending').toLowerCase() === 'pending' ? (
                           <button
                             onClick={() => {
                               setSelectedLeave(leave);
@@ -281,13 +283,13 @@ const LeavePage = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div style={{ backgroundColor: 'var(--bg-app)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
               <div style={{ fontSize: '1rem', fontWeight: 700 }}>
-                {selectedLeave.first_name} {selectedLeave.last_name} ({selectedLeave.department})
+                {selectedLeave?.first_name ?? 'Employee'} {selectedLeave?.last_name ?? ''} ({selectedLeave?.department ?? 'General'})
               </div>
               <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                Type: <b>{selectedLeave.leave_type}</b> • Duration: <b>{selectedLeave.start_date}</b> to <b>{selectedLeave.end_date}</b>
+                Type: <b>{selectedLeave?.leave_type ?? 'Paid'}</b> • Duration: <b>{selectedLeave?.start_date ?? ''}</b> to <b>{selectedLeave?.end_date ?? ''}</b>
               </div>
               <p style={{ fontSize: '0.9rem', marginTop: '0.5rem', fontStyle: 'italic' }}>
-                "{selectedLeave.reason}"
+                "{selectedLeave?.reason ?? ''}"
               </p>
             </div>
 

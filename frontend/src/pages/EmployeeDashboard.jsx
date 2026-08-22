@@ -41,15 +41,15 @@ const EmployeeDashboard = () => {
     setError(null);
     try {
       const res = await dashboardService.getEmployeeStats();
-      if (res.success) {
-        setStats(res.stats);
+      if (res?.success) {
+        setStats(res.stats ?? {});
         if (isManual) setToast({ message: 'Dashboard updated with latest data.', type: 'success' });
       } else {
         setError('Failed to fetch personal stats.');
       }
     } catch (err) {
       console.error('Failed to load employee dashboard metrics:', err);
-      setError(err.response?.data?.message || 'Server error loading metrics.');
+      setError(err.response?.data?.message ?? 'Server error loading metrics.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -70,33 +70,34 @@ const EmployeeDashboard = () => {
   const handleCheckIn = async () => {
     try {
       const res = await attendanceService.checkIn();
-      if (res.success) {
-        setToast({ message: res.message, type: 'success' });
+      if (res?.success) {
+        setToast({ message: res.message ?? 'Checked in successfully!', type: 'success' });
         fetchEmployeeDashboard();
       }
     } catch (err) {
-      setToast({ message: err.response?.data?.message || 'Check-in failed.', type: 'error' });
+      setToast({ message: err.response?.data?.message ?? 'Check-in failed.', type: 'error' });
     }
   };
 
   const handleCheckOut = async () => {
     try {
       const res = await attendanceService.checkOut();
-      if (res.success) {
-        setToast({ message: res.message, type: 'success' });
+      if (res?.success) {
+        setToast({ message: res.message ?? 'Checked out successfully!', type: 'success' });
         fetchEmployeeDashboard();
       }
     } catch (err) {
-      setToast({ message: err.response?.data?.message || 'Check-out failed.', type: 'error' });
+      setToast({ message: err.response?.data?.message ?? 'Check-out failed.', type: 'error' });
     }
   };
 
   if (loading) return <Loader message="Loading your Employee Portal..." />;
 
-  const todayRecord = stats?.todayAttendance;
+  const todayRecord = stats?.todayAttendance ?? null;
   const isCheckedIn = !!todayRecord?.check_in;
   const isCheckedOut = !!todayRecord?.check_out;
-  const salary = stats?.salarySummary;
+  const salary = stats?.salarySummary ?? null;
+  const recentAttendance = stats?.recentAttendance ?? [];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -115,7 +116,7 @@ const EmployeeDashboard = () => {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
           <img
-            src={user?.employee?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`}
+            src={user?.employee?.avatar_url ?? `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email ?? 'employee'}`}
             alt="Profile Avatar"
             style={{
               width: '80px',
@@ -128,10 +129,10 @@ const EmployeeDashboard = () => {
           />
           <div>
             <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-main)' }}>
-              Good {currentTime.getHours() < 12 ? 'Morning' : currentTime.getHours() < 18 ? 'Afternoon' : 'Evening'}, {user?.employee?.first_name || 'Employee'}! 👋
+              Good {currentTime.getHours() < 12 ? 'Morning' : currentTime.getHours() < 18 ? 'Afternoon' : 'Evening'}, {user?.employee?.first_name ?? 'Employee'}! 👋
             </h2>
             <p style={{ fontSize: '0.925rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-              {user?.employee?.designation || 'Team Member'} • {user?.employee?.department || 'Engineering'}
+              {user?.employee?.designation ?? 'Team Member'} • {user?.employee?.department ?? 'Engineering'}
             </p>
           </div>
         </div>
@@ -209,36 +210,36 @@ const EmployeeDashboard = () => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
         <StatCard
           title="Present Days"
-          value={stats?.presentDays || 0}
+          value={stats?.presentDays ?? 0}
           subtext="Verified shift check-ins"
           icon={UserCheck}
           color="#10b981"
         />
         <StatCard
           title="Attendance Rate"
-          value={`${stats?.attendancePercentage || 100}%`}
+          value={`${stats?.attendancePercentage ?? 100}%`}
           subtext="Workdays elapsed"
           icon={Percent}
           color="#6366f1"
         />
         <StatCard
           title="Leave Balance"
-          value={`${stats?.leaveBalance || 0} Days`}
-          subtext={`Out of ${stats?.annualAllowance || 24} annual quota`}
+          value={`${stats?.leaveBalance ?? 0} Days`}
+          subtext={`Out of ${stats?.annualAllowance ?? 24} annual quota`}
           icon={Award}
           color="#8b5cf6"
         />
         <StatCard
           title="Pending Requests"
-          value={stats?.pendingLeaves || 0}
+          value={stats?.pendingLeaves ?? 0}
           subtext="Under HR review"
           icon={CalendarDays}
           color="#f59e0b"
         />
         <StatCard
           title="Latest Net Salary"
-          value={salary ? `$${parseFloat(salary.net_salary).toLocaleString()}` : '$0.00'}
-          subtext={`Month: ${salary?.month || 'Current'}`}
+          value={salary ? `$${(parseFloat(salary?.net_salary ?? 0) || 0).toLocaleString()}` : '$0.00'}
+          subtext={`Month: ${salary?.month ?? 'Current'}`}
           icon={CircleDollarSign}
           color="#06b6d4"
         />
@@ -250,7 +251,7 @@ const EmployeeDashboard = () => {
         <div className="glass-card" style={{ padding: '1.75rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
             <h3 style={{ fontSize: '1.15rem', fontWeight: 700 }}>Today's Shift Status</h3>
-            <StatusBadge status={todayRecord ? todayRecord.status : 'Not Clocked In'} />
+            <StatusBadge status={todayRecord?.status ?? 'Not Clocked In'} />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', backgroundColor: 'var(--bg-app)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
@@ -292,19 +293,19 @@ const EmployeeDashboard = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '0.75rem', backgroundColor: 'var(--bg-app)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
               <div>
                 <span style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>Basic</span>
-                <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>${parseFloat(salary.basic_salary).toLocaleString()}</div>
+                <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>${(parseFloat(salary?.basic_salary ?? 0) || 0).toLocaleString()}</div>
               </div>
               <div>
                 <span style={{ fontSize: '0.725rem', color: 'var(--success)' }}>Bonus</span>
-                <div style={{ fontWeight: 700, color: 'var(--success)' }}>+${parseFloat(salary.bonus).toLocaleString()}</div>
+                <div style={{ fontWeight: 700, color: 'var(--success)' }}>+${(parseFloat(salary?.bonus ?? 0) || 0).toLocaleString()}</div>
               </div>
               <div>
                 <span style={{ fontSize: '0.725rem', color: 'var(--danger)' }}>Deductions</span>
-                <div style={{ fontWeight: 700, color: 'var(--danger)' }}>-${parseFloat(salary.deductions).toLocaleString()}</div>
+                <div style={{ fontWeight: 700, color: 'var(--danger)' }}>-${(parseFloat(salary?.deductions ?? 0) || 0).toLocaleString()}</div>
               </div>
               <div>
                 <span style={{ fontSize: '0.725rem', color: 'var(--primary)' }}>Net Pay</span>
-                <div style={{ fontWeight: 800, color: 'var(--primary)' }}>${parseFloat(salary.net_salary).toLocaleString()}</div>
+                <div style={{ fontWeight: 800, color: 'var(--primary)' }}>${(parseFloat(salary?.net_salary ?? 0) || 0).toLocaleString()}</div>
               </div>
             </div>
           ) : (
@@ -328,7 +329,7 @@ const EmployeeDashboard = () => {
           </Link>
         </div>
 
-        {(!stats?.recentAttendance || stats.recentAttendance.length === 0) ? (
+        {recentAttendance.length === 0 ? (
           <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
             No recent attendance logs recorded.
           </div>
@@ -345,18 +346,18 @@ const EmployeeDashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {stats.recentAttendance.map((rec) => (
-                  <tr key={rec.id}>
+                {recentAttendance.map((rec, idx) => (
+                  <tr key={rec?.id ?? idx}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}>
                         <Calendar size={14} color="var(--primary)" />
-                        <span>{rec.date}</span>
+                        <span>{rec?.date ?? 'Today'}</span>
                       </div>
                     </td>
-                    <td>{rec.check_in ? new Date(rec.check_in).toLocaleTimeString() : '--:--'}</td>
-                    <td>{rec.check_out ? new Date(rec.check_out).toLocaleTimeString() : '--:--'}</td>
-                    <td><StatusBadge status={rec.status} /></td>
-                    <td style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{rec.notes || '—'}</td>
+                    <td>{rec?.check_in ? new Date(rec.check_in).toLocaleTimeString() : '--:--'}</td>
+                    <td>{rec?.check_out ? new Date(rec.check_out).toLocaleTimeString() : '--:--'}</td>
+                    <td><StatusBadge status={rec?.status ?? 'Present'} /></td>
+                    <td style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{rec?.notes ?? '—'}</td>
                   </tr>
                 ))}
               </tbody>
