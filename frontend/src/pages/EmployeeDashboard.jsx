@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { dashboardService } from '../services/dashboardService';
 import { attendanceService } from '../services/attendanceService';
+import { notificationService } from '../services/notificationService';
 import { getAvatarUrl } from '../utils/avatarUtils';
 import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
@@ -20,13 +21,28 @@ import {
   Percent, 
   Award,
   Calendar,
-  CheckSquare
+  CheckSquare,
+  Bell,
+  Megaphone,
+  User,
+  Info
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+
+const getNotifColor = (type) => {
+  const t = (type || '').toLowerCase();
+  if (t === 'leave') return '#10b981';
+  if (t === 'task') return '#8b5cf6';
+  if (t === 'appraisal') return '#f59e0b';
+  if (t === 'announcement') return '#3b82f6';
+  if (t === 'payroll') return '#06b6d4';
+  return '#6366f1';
+};
 
 const EmployeeDashboard = () => {
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
+  const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
@@ -42,13 +58,13 @@ const EmployeeDashboard = () => {
     if (isManual) setRefreshing(true);
     setError(null);
     try {
-      const res = await dashboardService.getEmployeeStats();
-      if (res?.success) {
-        setStats(res.stats ?? {});
-        if (isManual) setToast({ message: 'Dashboard updated with latest data.', type: 'success' });
-      } else {
-        setError('Failed to fetch personal stats.');
-      }
+      const [resS, resN] = await Promise.all([
+        dashboardService.getEmployeeStats(),
+        notificationService.getMyNotifications()
+      ]);
+      if (resS?.success) setStats(resS.stats ?? {});
+      if (resN?.success) setNotifications(resN.notifications?.slice(0, 5) ?? []);
+      if (isManual) setToast({ message: 'Dashboard updated with latest data.', type: 'success' });
     } catch (err) {
       console.error('Failed to load employee dashboard metrics:', err);
       setError(err.response?.data?.message ?? 'Server error loading metrics.');
@@ -60,12 +76,7 @@ const EmployeeDashboard = () => {
 
   useEffect(() => {
     fetchEmployeeDashboard();
-
-    // 60-Second Auto-Refresh Polling Timer
-    const interval = setInterval(() => {
-      fetchEmployeeDashboard();
-    }, 60000);
-
+    const interval = setInterval(() => fetchEmployeeDashboard(), 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -255,7 +266,7 @@ const EmployeeDashboard = () => {
         />
       </div>
 
-      {/* Middle Section: Salary Breakdown & Shift Status */}
+      {/* Middle Section: Shift Status & Real-time Notifications Feed */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }} className="dash-mid-grid">
         {/* Today Shift Detail */}
         <div className="glass-card" style={{ padding: '1.75rem' }}>
@@ -278,49 +289,36 @@ const EmployeeDashboard = () => {
               </div>
             </div>
           </div>
-
-          {todayRecord?.notes && (
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '1rem', fontStyle: 'italic' }}>
-              Note: "{todayRecord.notes}"
-            </p>
-          )}
         </div>
 
-        {/* Dynamic Salary Summary Card */}
-        <div className="glass-card" style={{ padding: '1.75rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-            <div>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 700 }}>Salary Compensation Summary</h3>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Latest monthly payroll breakdown</p>
+        {/* Latest 5 Notifications Feed Widget */}
+        <div className="glass-card" style={{ padding: '1.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Bell size={18} color="var(--primary)" />
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 700 }}>Recent Notifications</h3>
             </div>
-            <Link to="/payroll" className="btn btn-outline btn-sm" style={{ gap: '0.35rem' }}>
-              <span>Payslips</span>
-              <ArrowUpRight size={14} />
-            </Link>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Latest updates</span>
           </div>
 
-          {salary ? (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '0.75rem', backgroundColor: 'var(--bg-app)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-              <div>
-                <span style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>Basic</span>
-                <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>${(parseFloat(salary?.basic_salary ?? 0) || 0).toLocaleString()}</div>
-              </div>
-              <div>
-                <span style={{ fontSize: '0.725rem', color: 'var(--success)' }}>Bonus</span>
-                <div style={{ fontWeight: 700, color: 'var(--success)' }}>+${(parseFloat(salary?.bonus ?? 0) || 0).toLocaleString()}</div>
-              </div>
-              <div>
-                <span style={{ fontSize: '0.725rem', color: 'var(--danger)' }}>Deductions</span>
-                <div style={{ fontWeight: 700, color: 'var(--danger)' }}>-${(parseFloat(salary?.deductions ?? 0) || 0).toLocaleString()}</div>
-              </div>
-              <div>
-                <span style={{ fontSize: '0.725rem', color: 'var(--primary)' }}>Net Pay</span>
-                <div style={{ fontWeight: 800, color: 'var(--primary)' }}>${(parseFloat(salary?.net_salary ?? 0) || 0).toLocaleString()}</div>
-              </div>
+          {notifications.length === 0 ? (
+            <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+              No recent notifications in your feed.
             </div>
           ) : (
-            <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-              No payroll statements issued yet.
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+              {notifications.map(n => (
+                <div key={n.id} style={{
+                  padding: '0.65rem 0.85rem',
+                  borderRadius: '10px',
+                  backgroundColor: 'var(--bg-app)',
+                  border: `1px solid ${getNotifColor(n.type)}30`,
+                  borderLeft: `4px solid ${getNotifColor(n.type)}`
+                }}>
+                  <div style={{ fontSize: '0.825rem', fontWeight: 700, color: 'var(--text-main)' }}>{n.title}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>{n.message}</div>
+                </div>
+              ))}
             </div>
           )}
         </div>

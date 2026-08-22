@@ -461,10 +461,61 @@ const executeMockQuery = (sql, params = []) => {
     return mockStore.employees;
   }
 
+  // --- NOTIFICATIONS MODULE ---
+  if (upperSql.includes('INSERT INTO NOTIFICATIONS')) {
+    const newId = mockStore.notifications.length + 1;
+    const newNotif = {
+      id: newId,
+      user_id: Number(params[0]),
+      title: params[1],
+      message: params[2] || '',
+      type: params[3] || 'info',
+      is_read: false,
+      read_status: false,
+      created_at: new Date()
+    };
+    mockStore.notifications.push(newNotif);
+    saveMockStore();
+    return { insertId: newId };
+  }
+  if (upperSql.includes('UPDATE NOTIFICATIONS SET IS_READ = TRUE WHERE ID = ?') || upperSql.includes('UPDATE NOTIFICATIONS SET READ_STATUS = TRUE WHERE ID = ?')) {
+    const id = Number(params[0]);
+    const notif = mockStore.notifications.find(n => n.id === id);
+    if (notif) {
+      notif.is_read = true;
+      notif.read_status = true;
+    }
+    saveMockStore();
+    return { affectedRows: 1 };
+  }
+  if (upperSql.includes('UPDATE NOTIFICATIONS SET IS_READ = TRUE WHERE USER_ID = ?') || upperSql.includes('UPDATE NOTIFICATIONS SET READ_STATUS = TRUE WHERE USER_ID = ?')) {
+    const userId = Number(params[0]);
+    mockStore.notifications.filter(n => n.user_id === userId).forEach(n => {
+      n.is_read = true;
+      n.read_status = true;
+    });
+    saveMockStore();
+    return { affectedRows: 1 };
+  }
+  if (upperSql.includes('DELETE FROM NOTIFICATIONS WHERE ID = ?')) {
+    const id = Number(params[0]);
+    mockStore.notifications = mockStore.notifications.filter(n => n.id !== id);
+    saveMockStore();
+    return { affectedRows: 1 };
+  }
+  if (upperSql.includes('FROM NOTIFICATIONS')) {
+    if (upperSql.includes('WHERE USER_ID = ?')) {
+      const userId = Number(params[0]);
+      return mockStore.notifications
+        .filter(n => n.user_id === userId)
+        .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    }
+    return mockStore.notifications;
+  }
+
   // --- OTHER STANDALONE MODULE QUERIES ---
   if (upperSql.includes('FROM HOLIDAYS')) return mockStore.holidays;
   if (upperSql.includes('FROM ANNOUNCEMENTS')) return mockStore.announcements;
-  if (upperSql.includes('FROM NOTIFICATIONS')) return mockStore.notifications.filter(n => n.user_id === Number(params[0]));
   if (upperSql.includes('FROM DOCUMENTS')) return mockStore.documents;
   if (upperSql.includes('FROM AUDIT_LOGS')) return mockStore.audit_logs;
   if (upperSql.includes('FROM ATTENDANCE_CORRECTIONS')) return mockStore.attendance_corrections;

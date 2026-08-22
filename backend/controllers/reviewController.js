@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { createNotification } = require('./notificationController');
 
 const getReviews = async (req, res) => {
   try {
@@ -11,9 +12,14 @@ const getReviews = async (req, res) => {
         ORDER BY r.created_at DESC
       `);
     } else {
+      let empId = req.employee ? req.employee.id : 0;
+      if (!empId && req.user) {
+        const emps = await db.query('SELECT id FROM employees WHERE user_id = ? OR LOWER(email) = LOWER(?)', [req.user.id, req.user.email]);
+        if (emps && emps.length > 0) empId = emps[0].id;
+      }
       reviews = await db.query(
         'SELECT * FROM performance_reviews WHERE employee_id = ? ORDER BY created_at DESC',
-        [req.employee ? req.employee.id : 0]
+        [empId]
       );
     }
     return res.json({ success: true, count: reviews.length, reviews });
@@ -38,6 +44,18 @@ const addReview = async (req, res) => {
     );
 
     const newId = result.insertId || result.id;
+
+    // Create notification for employee
+    const targetEmps = await db.query('SELECT user_id FROM employees WHERE id = ?', [employeeId]);
+    if (targetEmps && targetEmps.length > 0 && targetEmps[0].user_id) {
+      await createNotification({
+        userId: targetEmps[0].user_id,
+        title: '🟡 New Appraisal Available',
+        message: `Your ${reviewPeriod} performance review (${rating}/5 Stars) is now available.`,
+        type: 'appraisal'
+      });
+    }
+
     const added = await db.query('SELECT * FROM performance_reviews WHERE id = ?', [newId]);
 
     return res.status(201).json({
