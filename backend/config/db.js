@@ -538,8 +538,36 @@ const executeMockQuery = (sql, params = []) => {
     return mockStore.announcements.slice().sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
   }
 
+  // --- HOLIDAYS MODULE ---
+  if (upperSql.includes('INSERT INTO HOLIDAYS')) {
+    const newId = mockStore.holidays.length + 1;
+    const newHol = {
+      id: newId,
+      title: params[0],
+      date: params[1],
+      type: params[2] || 'Public',
+      description: params[3] || '',
+      created_at: new Date()
+    };
+    mockStore.holidays.push(newHol);
+    saveMockStore();
+    return { insertId: newId };
+  }
+  if (upperSql.includes('DELETE FROM HOLIDAYS WHERE ID')) {
+    const id = Number(params[0]);
+    mockStore.holidays = mockStore.holidays.filter(h => h.id !== id);
+    saveMockStore();
+    return { affectedRows: 1 };
+  }
+  if (upperSql.includes('FROM HOLIDAYS')) {
+    if (upperSql.includes('WHERE ID = ?')) {
+      const hol = mockStore.holidays.find(h => h.id === Number(params[0]));
+      return hol ? [hol] : [];
+    }
+    return mockStore.holidays.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
+  }
+
   // --- OTHER STANDALONE MODULE QUERIES ---
-  if (upperSql.includes('FROM HOLIDAYS')) return mockStore.holidays;
   if (upperSql.includes('FROM DOCUMENTS')) return mockStore.documents;
   if (upperSql.includes('FROM AUDIT_LOGS')) return mockStore.audit_logs;
   if (upperSql.includes('FROM ATTENDANCE_CORRECTIONS')) return mockStore.attendance_corrections;
