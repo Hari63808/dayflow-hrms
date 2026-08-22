@@ -163,12 +163,16 @@ const getEmployeeStats = async (req, res) => {
     const pendingTasksCount = myTasks.filter(t => t.status === 'Pending' || t.status === 'In Progress').length;
     const completedTasksCount = myTasks.filter(t => t.status === 'Completed').length;
 
-    // Recent Attendance History (last 7)
-    const recentAttendance = myAttendance.slice(0, 7);
+    // Recent Attendance History
+    const recentAttendance = await db.query(
+      'SELECT * FROM attendance WHERE employee_id = ? ORDER BY date DESC LIMIT 5',
+      [empId]
+    );
 
     return res.json({
       success: true,
       stats: {
+        todayAttendance,
         presentDays,
         attendancePercentage,
         annualAllowance,
@@ -177,11 +181,12 @@ const getEmployeeStats = async (req, res) => {
         pendingLeaves,
         approvedLeaves,
         salarySummary,
-        todayAttendance,
         assignedTasks,
         pendingTasks: pendingTasksCount,
         completedTasks: completedTasksCount,
-        recentAttendance
+        recentAttendance,
+        profile: req.employee
+
       }
     });
   } catch (error) {
